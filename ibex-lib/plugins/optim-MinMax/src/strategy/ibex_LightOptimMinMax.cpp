@@ -112,10 +112,13 @@ bool LightOptimMinMax::optimize(Cell* x_cell,double loup) {
         while(!stop_crit_reached(current_iter,y_heap,data_x->fmax)) {
             if (trace >= 3) std::cout<< *y_heap<<std::endl;
 
-            found_point  = false;
+            found_point  = false; // Alex : to protect
 
             Cell * y_cell = y_heap->pop(); // we extract an element with critprob probability to take it according to the first crit
-            current_iter++;
+            // Alex : to protect
+
+            current_iter++; // Alex : to protect
+            
             if((list_elem_max != 0 && ((y_heap->size() + heap_save.size())>list_elem_max)) || (y_cell->box.size())<prec_y) {
                 bool res = handle_cell( x_cell, y_cell,loup);
                 if (!res) { // x_cell has been deleted

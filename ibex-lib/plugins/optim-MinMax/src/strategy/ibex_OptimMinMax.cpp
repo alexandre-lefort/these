@@ -14,6 +14,8 @@
 #include "ibex_NoBisectableVariableException.h"
 #include "ibex_SystemFactory.h"
 
+#include <omp.h>
+
 using namespace std;
 
 namespace ibex {
@@ -401,8 +403,21 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
     long long int nbel_count(0);
     bool handle_res1,handle_res2;
 
+    omp_set_dynamic(0); 
+    omp_set_num_threads(4); // omp
+
     try {
+    // omp
+    #pragma omp parallel shared(/**/) num_threads(4)
+    {
+    #pragma omp single
+    {
+
         while (!buffer->empty() && (loup-uplo)>goal_rel_prec) {
+        // omp
+        #pragma omp task
+        {
+
             //			if (trace >= 2) cout << " buffer " << buffer << endl;
             if (trace >= 2) buffer->print(cout);
             loup_changed=false;
@@ -492,9 +507,16 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
                 update_uplo(); // the heap has changed -> recalculate the uplo
 
             }
+
+        } // omp task
+
         }
         if(monitor)
             export_monitor(&ub,&lb,&nbel,&nbyel);
+
+    } // omp parallel
+    } // omp single
+
     }
     catch (TimeOutException& ) {
         Timer::stop();
@@ -504,6 +526,8 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
 
     Timer::stop();
     time = Timer::get_time();
+
+    cout<<"threads="<<omp_get_num_threads()<<endl;
 
     if (uplo_of_epsboxes == POS_INFINITY && (loup==POS_INFINITY || (loup==initial_loup && goal_abs_prec==0 && goal_rel_prec==0)))
         return INFEASIBLE;
