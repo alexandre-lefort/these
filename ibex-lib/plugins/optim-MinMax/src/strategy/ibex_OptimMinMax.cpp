@@ -16,6 +16,8 @@
 
 #include <omp.h>
 
+#define DEF_NUM_THREAD 8
+
 using namespace std;
 
 namespace ibex {
@@ -52,72 +54,98 @@ const bool OptimMinMax::default_visit_all_csp = false;
 
 
 
-OptimMinMax::OptimMinMax(NormalizedSystem& x_sys,NormalizedSystem& xy_sys, Ctc& x_ctc,Ctc& xy_ctc,double prec_x,double prec_y,double goal_rel_prec):
-    Optim(x_sys.nb_var, new CellDoubleHeap(*new CellCostFmaxlb_opt(), *new CellCostFmaxub_opt()),
+OptimMinMax::OptimMinMax(NormalizedSystem& x_sys_t, NormalizedSystem& xy_sys_t, Ctc& x_ctc_t, Ctc& xy_ctc_t, double prec_x, double prec_y, double goal_rel_prec):
+    Optim(x_sys_t.nb_var, new CellDoubleHeap(*new CellCostFmaxlb_opt(), *new CellCostFmaxub_opt()),
           prec_x, goal_rel_prec, 0, 1), // attention meme precision en relatif et en absolue
+    x_box_init(x_sys_t.box),
+    y_box_init(xy_sys_t.box.subvector(x_sys_t.nb_var, xy_sys_t.nb_var-1)),
+    y_box_init_fa(IntervalVector(1)),  
     propag(true),
-    x_box_init(x_sys.box), y_box_init(xy_sys.box.subvector(x_sys.nb_var, xy_sys.nb_var-1)), trace_freq(10000),
-    lsolve(xy_sys,xy_ctc,NULL),
-    loc_solve(xy_sys,NULL,NULL,x_ctc,x_sys.box.size(),xy_sys.box.size()-x_sys.box.size(),false),
-    x_ctc(x_ctc),x_sys(x_sys),
-    bsc(new LargestFirst()),
-    prec_y(prec_y),
-    iter(default_iter),
+    trace_freq(10000),
+    num_thread(DEF_NUM_THREAD),
     list_rate(default_list_rate),
+    list_elem_absolute_max(default_list_elem_absolute_max),
+    iter(default_iter),
     min_prec_coef(default_min_prec_coef),
     critpr(default_prob_heap),
-    list_elem_absolute_max(default_list_elem_absolute_max),
     local_iter(0),
-    fa_lsolve(xy_sys,xy_ctc,NULL,true), // useless if no fa cst but need to construct it...
-    fa_loc_solve(xy_sys,NULL,NULL,x_ctc,x_sys.box.size(),xy_sys.box.size()-x_sys.box.size(),true),
-    fa_y_cst(false),
-    y_box_init_fa(IntervalVector(1)),
-    monitor(false),
+    list_rate_csp(0),                       // unused                   
+    list_elem_absolute_max_csp(0),          // unused                  
+    iter_csp(0),                            // unused
+    min_prec_coef_csp(0.0),                 // unused           
+    critpr_csp(0),                          // unused  
+    local_iter_csp(0),                      // unused      
     only_csp(false),
-    monitor_csp(false),
-    visit_all(default_visit_all),
-    nb_point(default_nb_point),
     nb_sols(default_nb_sols),
     min_acpt_diam(default_min_acpt_diam),
     nb_sivia_iter(default_nb_sivia_iter),
     nb_optim_iter(default_nb_optim_iter),
     y_sol_radius(default_y_sol_radius),
     reg_acpt_error(default_reg_acpt_error),
+    monitor(false),
+    monitor_csp(false),
+    heap_prob(0),                           // unused
+    visit_all(default_visit_all),
+    visit_all_csp(default_visit_all_csp),   // unused
+    nb_point(default_nb_point),
     perf_thresh(default_perf_thresh),
-    min_goal(x_sys.goal != NULL)
+    prec_y(prec_y),
+    fa_y_cst(false),
+    min_goal(x_sys_t.goal != NULL),
+    prec_fa_y(0),
+    loc_sols(std::pair<std::vector<Vector>,std::vector<Matrix> >()),
 
+    x_ctc(std::vector<Ctc>()),                   
+    x_sys(std::vector<NormalizedSystem>()),      
+    lsolve(std::vector<LightOptimMinMax>()),           
+    loc_solve(std::vector<LightLocalSolver>()),  
+    bsc(std::vector<Bsc>()),                     
+    minus_goal_y_at_x(std::vector<Function>()),                
+    local_search(std::vector<UnconstrainedLocalSearch>()),     
+    fa_lsolve(std::vector<LightOptimMinMax>()),                
+    minus_goal_csp_y_at_x(std::vector<Function>()),            
+    local_search_csp(std::vector<UnconstrainedLocalSearch>()), 
+    fa_loc_solve(std::vector<LightLocalSolver>())             
 {
-    if(!min_goal && xy_sys.goal !=NULL) {
 
+    if(!min_goal && xy_sys_t.goal != NULL) {
         // goal function reformulation as min instead of max for local solver
-        Array<const ExprNode> args(xy_sys.goal->nb_arg());
+        Array<const ExprNode> args(xy_sys_t.goal->nb_arg());
         Array<const ExprSymbol> var;
-        for(int i = 0;i<xy_sys.goal->nb_arg();i++) {
-            const ExprSymbol& a = ExprSymbol::new_(xy_sys.goal->arg(i).dim);
+        for(int i = 0 ; i < xy_sys_t.goal->nb_arg() ; i++) {
+            const ExprSymbol& a = ExprSymbol::new_(xy_sys_t.goal->arg(i).dim);
             var.add(a);
             args.set_ref(i,a);
         }
-        minus_goal_y_at_x = new Function(var,-(*xy_sys.goal)(args));
-
-        //        minus_goal_csp = minus_goal;// does not matter, fa solver not used
-
-        local_search = new UnconstrainedLocalSearch(*minus_goal_y_at_x,IntervalVector(1));
-        lsolve.local_solver = local_search;
-        loc_solve.local_solver_over_y = local_search;
-        loc_solve.local_solver_over_x = new UnconstrainedLocalSearch(*xy_sys.goal,IntervalVector(1));
-
-        //create affine eval of goal function
-        Affine2Eval* aff_eval = new Affine2Eval(*(xy_sys.goal));
-        lsolve.affine_goal = aff_eval;
-        //    fa_lsolve(xy_sys,xy_ctc,UnconstrainedLocalSearch(minus_goal_csp,IntervalVector(1)),true); // useless if no fa cst but need to construct it...
-
-        lsolve.goal_abs_prec = goal_rel_prec/100; // set goal prec of maximization problem lower than minimization
-        fa_lsolve.goal_abs_prec = 1e-2;
+    }
+    // TODO : test structures ExprNode in a unit test
+    for (int i = 0 ; i < num_thread ; i ++) {
+        x_ctc.push_back(Ctc(x_ctc_t));
+        x_sys.push_back(System(x_sys_t));
+        lsolve.push_back(LightOptimMinMax(xy_sys_t, xy_ctc, NULL));
+        loc_solve.push_back(LightLocalSolver(xy_sys_t, NULL, NULL, x_ctc_t, x_sys_t.box.size(), xy_sys_t.box.size()-x_sys_t.box.size(), false));
+        bsc.push_back(LargestFirst());
+        
+        fa_lsolve.push_back(LightOptimMinMax(xy_sys_t, xy_ctc_t, NULL, true)); // useless if no fa cst but need to construct it...
+        fa_loc_solve.push_back(LightLocalSolver(xy_sys_t, NULL, NULL, x_ctc_t, x_sys_t.box.size(), xy_sys_t.box.size()-x_sys_t.box.size(), true));
+    
+        if(!min_goal && xy_sys_t.goal != NULL) {
+            // goal function reformulation as min instead of max for local solver
+            minus_goal_y_at_x.push_back(Function(var,-(*xy_sys_t.goal)(args)));    
+            local_search.push_back(UnconstrainedLocalSearch(minus_goal_y_at_x[i],IntervalVector(1)));
+            lsolve.local_solver = local_search[i];
+            loc_solve.local_solver_over_y = local_search[i];
+            loc_solve.local_solver_over_x = new UnconstrainedLocalSearch(*xy_sys_t.goal,IntervalVector(1));
+            Affine2Eval* aff_eval = new Affine2Eval(*(xy_sys.goal));
+            lsolve.affine_goal = aff_eval;
+            lsolve.goal_abs_prec = goal_rel_prec/100; // set goal prec of maximization problem lower than minimization
+            fa_lsolve.goal_abs_prec = 1e-2;
+        }
     }
 
 };
 
-
+ // Todo :
 OptimMinMax::OptimMinMax(NormalizedSystem& x_sys,NormalizedSystem& xy_sys,NormalizedSystem& max_fa_y_cst_sys, Ctc& x_ctc,Ctc& xy_ctc,Ctc& y_fa_ctc,
                          double prec_x,double prec_y,double goal_rel_prec,double fa_cst_prec):
     Optim(x_sys.nb_var, new CellDoubleHeap(*new CellCostFmaxlb_opt(), *new CellCostFmaxub_opt()),
@@ -207,7 +235,7 @@ OptimMinMax::OptimMinMax(NormalizedSystem& x_sys,NormalizedSystem& xy_sys,Normal
 
 }
 
-
+//Todo :
 OptimMinMax::~OptimMinMax() {
     cout<<"Call destructor for optiminmax object: "<<this<<endl;
     cout<<"try to flush buffer"<<endl;
@@ -222,9 +250,6 @@ OptimMinMax::~OptimMinMax() {
     cout<<"buffer deleted"<<endl;
     delete bsc;
     cout<<"bsc deleted"<<endl;
-    //    delete minus_goal_y_at_x;
-    //    delete minus_goal_csp_y_at_x;
-    //    cout<<"minus goal deleted"<<endl;
 }
 
 
@@ -266,7 +291,7 @@ void OptimMinMax::init_loc_solve() {
     loc_solve.nb_sivia_iter = nb_sivia_iter;
 }
 
-
+// Todo ::
 void OptimMinMax::local_optimize(const IntervalVector& x_box_ini, double obj_init_bound) {
 
     cout<<" nb arg of fa cst: "<<fa_lsolve.xy_sys.goal->nb_arg()<<endl;

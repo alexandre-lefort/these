@@ -73,136 +73,130 @@ public:
 	 *
 	 *         TIMEOUT             time is out.
 	 */
-        Status optimize(const IntervalVector& init_box, double obj_init_bound=POS_INFINITY);
-	Status optimize();
-	
-	void local_optimize(const IntervalVector& x_box_ini, double obj_init_bound = POS_INFINITY);
+
+    virtual ~OptimMinMax(); // Destructor
+
+    IntervalVector x_box_init         ; // x box where solution is searched
+    IntervalVector y_box_init         ; // y box condition
+    IntervalVector y_box_init_fa      ; // y box for constraints of type for all y may be different than y_box_ini
+
+    bool   propag                     ; // true if propagation use
+    int    trace_freq                 ;
+    int    num_thread                 ;
+
+                                        //light solver param for objectif function
+    int    list_rate                  ; // rate of growth of y_heap size, see compute_heap_max_size function for formula detail
+    int    list_elem_absolute_max     ;
+    int    iter                       ; // number of iteration of lightsolver allowedNormalizedSystem *
+    double min_prec_coef              ; // used to compute y_prec allowed when run the light solver, see compute_min_prec function for formula
+    int    critpr                     ; // probability to choose second heap in light_solver
+    int    local_iter                 ; // number of local solver run
+
+                                        //light solver param for csp
+    int    list_rate_csp              ; // rate of growth of y_heap size, see compute_heap_max_size function for formula detail
+    int    list_elem_absolute_max_csp ;
+    int    iter_csp                   ; // number of iteration of lightsolver allowedNormalizedSystem *
+    double min_prec_coef_csp          ; // used to compute y_prec allowed when run the light solver, see compute_min_prec function for formula
+    int    critpr_csp                 ; // probability to choose second heap in light_solver
+    int    local_iter_csp             ; // number of local solver run
+    bool   only_csp                   ; // solve a csp problem, no objective function.
+
+                                        // light local solver param
+    double nb_sols                    ; // number of solutions search around a max-candidate point
+    double min_acpt_diam              ; // distance below which 2 points are considered equal (and thus no need to perform regression)
+    int    nb_sivia_iter              ; // number of sivia algo iteration, now obsolete?
+    int    nb_optim_iter              ; // number of minimization algo steps
+    double y_sol_radius               ; // between 0 and 1, indicate the diameter around candidate in which associated sol are kept.
+    double reg_acpt_error             ; // linear regression maximum error tolerated
+
+    bool   monitor                    ; // create log file if true
+    bool   monitor_csp                ; // create a "paver.txt" file that contains boxes plus a value which indicates whether constraints are respected or not
+                                        // each line of paver.txt corresponds to: x[0].lb x[0].ub x[1].lb ... x[n].ub val, val=0 -> constraint not respected, 
+                                        // val=1 -> maybe, val=2 -> constraint respected
+
+    int    heap_prob                  ; // probability between 0 and 100 to choose heap 2 over 1 in the main B&B, heap 1 is sorted from the lower lb
+                                        // to the greatest, heap 2 from the greatest ub to the lowest
+    bool   visit_all                  ; // if true force to visit all leaves of slave heap in max optim
+    bool   visit_all_csp              ; // if true force to visit all leaves of slave heap in max optim of csp solver
+
+    int    nb_point                   ; // number of point evaluation in current box x (use to compute uplo)
+    double perf_thresh                ; // cell is spawn from loc_solve csp list if its perf_csp is lower than perf_thresh
+
+    double prec_y                     ;
+    bool   fa_y_cst                   ; // indicates if there is for all y constraints
+    bool   min_goal                   ; // true if minimization problem, false if min max problem
+    double prec_fa_y                  ;
+
+    std::pair<std::vector<Vector>,std::vector<Matrix> > loc_sols;
+
+//private:
+    std::vector<Ctc>              x_ctc     ; // contractor w.r.t constraint on x
+    std::vector<NormalizedSystem> x_sys     ; // contains cst on x and objective function
+    std::<LightOptimMinMax>       lsolve    ;
+    std::vector<LightLocalSolver> loc_solve ;
+    std::vector<Bsc>              bsc       ;
+
+    std::vector<Function>                 minus_goal_y_at_x ; // goal function f becomes -f to solve a minimization problem over y at a fixed x
+    std::vector<UnconstrainedLocalSearch> local_search      ;
+
+    // Cst Factory
+    std::vector<LightOptimMinMax>         fa_lsolve              ;
+    std::vector<Function>                 minus_goal_csp_y_at_x  ; // goal csp function g becomes -g to solve a minimization problem over y at a fixed x
+    std::vector<UnconstrainedLocalSearch> local_search_csp       ;
+    std::vector<LightLocalSolver>         fa_loc_solve           ;
 
 
-    /**
-     * \brief destructor
-     */
-    virtual ~OptimMinMax();
-
-    IntervalVector x_box_init;
-    IntervalVector y_box_init;
-    IntervalVector y_box_init_fa; // y box for constraints of type for all y may be different than y_box_ini
-    bool propag; // true if propagation use
+    Status optimize(const IntervalVector& init_box, double obj_init_bound=POS_INFINITY);
+    Status optimize();
+    
+    void local_optimize(const IntervalVector& x_box_ini, double obj_init_bound = POS_INFINITY);
 
     inline void set_prec_y(double prec_y) {this->prec_y = prec_y; }
 
-    int trace_freq;
-
-    //light solver param for objectif function
-    int list_rate; // rate of growth of y_heap size, see compute_heap_max_size function for formula detail
-    int list_elem_absolute_max;
-    int iter; // number of iteration of lightsolver allowedNormalizedSystem *
-    double min_prec_coef; // used to compute y_prec allowed when run the light solver, see compute_min_prec function for formula
-    int critpr; // probability to choose second heap in light_solver
-    int local_iter; // number of local solver run
-
-    //light solver param for csp
-    int list_rate_csp; // rate of growth of y_heap size, see compute_heap_max_size function for formula detail
-    int list_elem_absolute_max_csp;
-    int iter_csp; // number of iteration of lightsolver allowedNormalizedSystem *
-    double min_prec_coef_csp; // used to compute y_prec allowed when run the light solver, see compute_min_prec function for formula
-    int critpr_csp; // probability to choose second heap in light_solver
-    int local_iter_csp; // number of local solver run
-    bool only_csp; // solve a csp problem, no objective function.
-
-    // light local solver param
-    double nb_sols; // number of solutions search around a max-candidate point
-    double min_acpt_diam; // distance below which 2 points are considered equal (and thus no need to perform regression)
-    int nb_sivia_iter; // number of sivia algo iteration, now obsolete?
-    int nb_optim_iter; // number of minimization algo steps
-    double y_sol_radius; // between 0 and 1, indicate the diameter around candidate in which associated sol are kept.
-    double reg_acpt_error; // linear regression maximum error tolerated
-
-
-    bool monitor; // create log file if true
-    bool monitor_csp; // create a "paver.txt" file that contains boxes plus a value which indicates whether constraints are respected or not
-    // each line of paver.txt corresponds to: x[0].lb x[0].ub x[1].lb ... x[n].ub val, val=0 -> constraint not respected, val=1 -> maybe, val=2 -> constraint respected
-
-    int heap_prob;// probability between 0 and 100 to choose heap 2 over 1 in the main B&B, heap 1 is sorted from the lower lb to the greatest, heap 2 from the greatest ub to the lowest
-
-    bool visit_all;// if true force to visit all leaves of slave heap in max optim
-    bool visit_all_csp;// if true force to visit all leaves of slave heap in max optim of csp solver
-
-    int nb_point; // number of point evaluation in current box x (use to compute uplo)
-    double perf_thresh; // cell is spawn from loc_solve csp list if its perf_csp is lower than perf_thresh
-    std::pair<std::vector<Vector>,std::vector<Matrix> > loc_sols;
-
-    void show_yheap(Cell * x_cell);
-
-
-//private:
-
-    Ctc& x_ctc; // contractor w.r.t constraint on x
-    NormalizedSystem& x_sys; // contains cst on x and objective function
-    LightOptimMinMax lsolve;
-    LightLocalSolver loc_solve;
-
-    Bsc* bsc;
-    double prec_y;
-    bool fa_y_cst; // indicates if there is for all y constraints
-    Function* minus_goal_y_at_x; // goal function f becomes -f to solve a minimization problem over y at a fixed x
-    UnconstrainedLocalSearch * local_search;
-    bool min_goal;// true if minimization problem, false if min max problem
-
-
-    void init_lsolve();
-    void init_fa_lsolve();
-    void init_loc_solve();
+    void   init_lsolve();
+    void   init_fa_lsolve();
+    void   init_loc_solve();
     double compute_min_prec( const IntervalVector& x_box,bool csp);
-    int choose_nbiter(bool midpoint_eval,bool csp,Cell* x_cell);
-    int compute_heap_max_size(int y_heap_size,bool csp);
-    bool get_feasible_point(Cell * elem);
-    int check_constraints(Cell * x_cell,bool midp);
-    int check_regular_ctr(const IntervalVector& box);
-    int check_fa_ctr(Cell * x_cell,bool midp);
-    bool handle_cell(Cell * x_cell);
-    bool spawn(Cell* x_cell); // spawn a cell into subcells from the csp list of loc_solve if perf crit is lower than spawn_thresh
-    bool check_optimizer();
-    bool eval_goal(Cell* x_cell,double loup);
-
-
-    // Fa cst variables
-    double prec_fa_y;
-    LightOptimMinMax fa_lsolve;
-    Function* minus_goal_csp_y_at_x;// goal csp function g becomes -g to solve a minimization problem over y at a fixed x
-    UnconstrainedLocalSearch * local_search_csp;
-    LightLocalSolver fa_loc_solve;
-
-
+    int    choose_nbiter(bool midpoint_eval,bool csp,Cell* x_cell);
+    int    compute_heap_max_size(int y_heap_size,bool csp);
+    bool   get_feasible_point(Cell * elem);
+    int    check_constraints(Cell * x_cell,bool midp);
+    int    check_regular_ctr(const IntervalVector& box);
+    int    check_fa_ctr(Cell * x_cell,bool midp);
+    bool   handle_cell(Cell * x_cell);
+    bool   spawn(Cell* x_cell); // spawn a cell into subcells from the csp list of loc_solve if perf crit is lower than spawn_thresh
+    bool   check_optimizer();
+    bool   eval_goal(Cell* x_cell,double loup);
+    void   show_yheap(Cell * x_cell);
 
     //Default parameters for light optim min max solver
-    static const int default_list_rate;
-    static const int default_list_elem_absolute_max;
-    static const int default_iter;
+    static const int    default_list_rate;
+    static const int    default_list_elem_absolute_max;
+    static const int    default_iter;
     static const double default_min_prec_coef;
-    static const int default_prob_heap;
-    static const int default_local_iter;
-    static const bool default_visit_all;
-    static const int default_nb_point;
+    static const int    default_prob_heap;
+    static const int    default_local_iter;
+    static const bool   default_visit_all;
+    static const int    default_nb_point;
     static const double default_perf_thresh;
 
     //Default parameters for light local solver
 
     static const double default_nb_sols;
     static const double default_min_acpt_diam;
-    static const int default_nb_sivia_iter;
-    static const int default_nb_optim_iter;
+    static const int    default_nb_sivia_iter;
+    static const int    default_nb_optim_iter;
     static const double default_y_sol_radius;
     static const double default_reg_acpt_error;
 
     //Csp fa function default parameters for light solver
-    static const int default_list_rate_csp;
-    static const int default_list_elem_absolute_max_csp;
-    static const int default_iter_csp;
+    static const int    default_list_rate_csp;
+    static const int    default_list_elem_absolute_max_csp;
+    static const int    default_iter_csp;
     static const double default_min_prec_coef_csp;
-    static const int default_prob_heap_csp;
-    static const int default_local_iter_csp;
-    static const bool default_visit_all_csp;
+    static const int    default_prob_heap_csp;
+    static const int    default_local_iter_csp;
+    static const bool   default_visit_all_csp;
 
 
 };
