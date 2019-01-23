@@ -24,21 +24,19 @@ void problem_2() {
 
     SystemFactory fac_x;
     fac_x.add_var(x,x_ini);
-    CtcIdentity x_ctc_id(x_ini.size());
 
     Function stab = Function(x,y, x[0] + y[0] - 1000);
 
     cout<<"constraints loaded"<<endl;
 
-    NormalizedSystem sys_x(fac_x);
+    NormalizedSystem sys_x_1(fac_x);
 
     SystemFactory fac_xy;
     fac_xy.add_var(x,x_ini);
     fac_xy.add_var(y,y_ini);
     fac_xy.add_goal(goal);
-    CtcIdentity xy_ctc(x_ini.size() + y_ini.size());
     cout<<"systems ok"<<endl;
-    NormalizedSystem sys_xy(fac_xy);
+    NormalizedSystem sys_xy_1(fac_xy);
 
     SystemFactory fac_fa_y_sys;
     fac_fa_y_sys.add_var(x,x_ini);
@@ -47,10 +45,20 @@ void problem_2() {
 
     double prec_fa_y = 1e-3;
 
-    NormalizedSystem fa_y_sys(fac_fa_y_sys);
-    CtcIdentity fa_y_ctc(x_ini.size()+y_ini.size());
+    NormalizedSystem fa_y_sys_1(fac_fa_y_sys);
 
 
+ind les tableau
+    for (int i = 0; i<num_thread;i++) {
+
+     sys_x[i] = new System(sys_x_1)
+    xy_ctc[i] = new CtcIdentity(x_ini.size() + y_ini.size());
+    x_ctc_id[i] = new CtcIdentity(x_ini.size());
+    fa_y_ctc[i] = new CtcIdentity(x_ini.size()+y_ini.size());
+
+}
+
+}
     OptimMinMax oo(sys_x, sys_xy, fa_y_sys, x_ctc_id, xy_ctc, fa_y_ctc, x_prec, y_prec,stop_prec,prec_fa_y);
 
     oo.list_elem_absolute_max = 0;

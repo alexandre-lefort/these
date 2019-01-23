@@ -329,6 +329,7 @@ bool LightOptimMinMax::handle_cell( Cell* x_cell,Cell*  y_cell,double loup,bool 
     if(eval_all(xy_sys.goal,xy_box).ub()>data_y->pf.ub()){
         cout<<" ************************** CRITICAL ISSUE *******************"<<endl;
         cout<<" get worst upper bound, should not happen due to monotonicity of ifunc"<<endl;
+        cout << xy_box << endl;
         cout<<"***************************************************************"<<endl;
     }
 

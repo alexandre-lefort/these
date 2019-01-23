@@ -408,7 +408,7 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
 
     try {
     // omp
-    #pragma omp parallel shared(/**/) num_threads(4)
+    #pragma omp parallel shared(/**/)
     {
     #pragma omp single
     {
