@@ -94,7 +94,6 @@ OptimMinMax::OptimMinMax(NormalizedSystem& x_sys_t, NormalizedSystem& xy_sys_t, 
     min_goal(x_sys_t.goal != NULL),
     prec_fa_y(0),
     loc_sols(std::pair<std::vector<Vector>,std::vector<Matrix> >()),
-
     x_ctc(std::vector<Ctc>()),                   
     x_sys(std::vector<NormalizedSystem>()),      
     lsolve(std::vector<LightOptimMinMax>()),           
@@ -124,8 +123,7 @@ OptimMinMax::OptimMinMax(NormalizedSystem& x_sys_t, NormalizedSystem& xy_sys_t, 
         x_sys.push_back(System(x_sys_t));
         lsolve.push_back(LightOptimMinMax(xy_sys_t, xy_ctc, NULL));
         loc_solve.push_back(LightLocalSolver(xy_sys_t, NULL, NULL, x_ctc_t, x_sys_t.box.size(), xy_sys_t.box.size()-x_sys_t.box.size(), false));
-        bsc.push_back(LargestFirst());
-        
+        bsc.push_back(LargestFirst());  
         fa_lsolve.push_back(LightOptimMinMax(xy_sys_t, xy_ctc_t, NULL, true)); // useless if no fa cst but need to construct it...
         fa_loc_solve.push_back(LightLocalSolver(xy_sys_t, NULL, NULL, x_ctc_t, x_sys_t.box.size(), xy_sys_t.box.size()-x_sys_t.box.size(), true));
     
@@ -146,93 +144,113 @@ OptimMinMax::OptimMinMax(NormalizedSystem& x_sys_t, NormalizedSystem& xy_sys_t, 
 };
 
  // Todo :
-OptimMinMax::OptimMinMax(NormalizedSystem& x_sys,NormalizedSystem& xy_sys,NormalizedSystem& max_fa_y_cst_sys, Ctc& x_ctc,Ctc& xy_ctc,Ctc& y_fa_ctc,
-                         double prec_x,double prec_y,double goal_rel_prec,double fa_cst_prec):
+OptimMinMax::OptimMinMax(NormalizedSystem& x_sys_t, NormalizedSystem& xy_sys_t, NormalizedSystem& max_fa_y_cst_sys_t, Ctc& x_ctc_t, Ctc& xy_ctc_t, Ctc& y_fa_ctc_t,
+                         double prec_x, double prec_y, double goal_rel_prec, double fa_cst_prec):
     Optim(x_sys.nb_var, new CellDoubleHeap(*new CellCostFmaxlb_opt(), *new CellCostFmaxub_opt()),
           prec_x, goal_rel_prec, goal_rel_prec, 1), // attention meme precision en relatif et en absolue
+    x_box_init(x_sys.box),
+    y_box_init(xy_sys.box.subvector(x_sys.nb_var, xy_sys.nb_var-1)),
+    y_box_init_fa(max_fa_y_cst_sys.box.subvector(x_sys.nb_var, max_fa_y_cst_sys.nb_var-1)),
     propag(true),
-    x_box_init(x_sys.box), y_box_init(xy_sys.box.subvector(x_sys.nb_var, xy_sys.nb_var-1)), trace_freq(10000),
-    x_ctc(x_ctc),x_sys(x_sys),
-    lsolve(xy_sys,xy_ctc,NULL),
-    loc_solve(xy_sys,NULL,NULL,x_ctc,x_sys.box.size(),xy_sys.box.size()-x_sys.box.size(),false),
-    bsc(new LargestFirst()),
-    prec_y(prec_y),
-    iter(default_iter),
+    trace_freq(10000),
+    num_thread(DEF_NUM_THREAD),
     list_rate(default_list_rate),
+    list_elem_absolute_max(default_list_elem_absolute_max),
+    iter(default_iter),
     min_prec_coef(default_min_prec_coef),
     critpr(default_prob_heap),
-    list_elem_absolute_max(default_list_elem_absolute_max),
-    local_iter(default_local_iter),
-    prec_fa_y(fa_cst_prec),
-    fa_lsolve(max_fa_y_cst_sys,y_fa_ctc,NULL,true), // construct light solver for for all y cst with fake contractor, contractor useless since no constraint on xy only the objective function matter
-    fa_loc_solve(xy_sys,NULL,NULL,x_ctc,x_sys.box.size(),xy_sys.box.size()-x_sys.box.size(),true),
-    fa_y_cst(true),
-    y_box_init_fa(max_fa_y_cst_sys.box.subvector(x_sys.nb_var, max_fa_y_cst_sys.nb_var-1)),
-    iter_csp(default_iter_csp),
+    local_iter(default_local_iter),  
     list_rate_csp(default_list_rate_csp),
+    list_elem_absolute_max_csp(default_list_elem_absolute_max_csp),
+    iter_csp(default_iter_csp),
     min_prec_coef_csp(default_min_prec_coef_csp),
     critpr_csp(default_prob_heap_csp),
-    list_elem_absolute_max_csp(default_list_elem_absolute_max_csp),
     local_iter_csp(default_local_iter_csp),
-    monitor(false),
     only_csp(false),
-    monitor_csp(false),
-    visit_all(default_visit_all),
-    nb_point(default_nb_point),
     nb_sols(default_nb_sols),
     min_acpt_diam(default_min_acpt_diam),
     nb_sivia_iter(default_nb_sivia_iter),
     nb_optim_iter(default_nb_optim_iter),
     y_sol_radius(default_y_sol_radius),
     reg_acpt_error(reg_acpt_error),
-    min_goal(x_sys.goal != NULL)
-
+    monitor(false),
+    monitor_csp(false),
+    heap_prob(0),
+    visit_all(default_visit_all),
+    visit_all_csp(default_visit_all_csp),
+    nb_point(default_nb_point),
+    perf_thresh(default_perf_thresh),
+    prec_y(prec_y),
+    fa_y_cst(true),
+    min_goal(x_sys.goal != NULL),
+    prec_fa_y(fa_cst_prec),
+    loc_sols(std::pair<std::vector<Vector>,std::vector<Matrix> >()),
+    x_ctc(std::vector<Ctc>()),                   
+    x_sys(std::vector<NormalizedSystem>()),      
+    lsolve(std::vector<LightOptimMinMax>()),           
+    loc_solve(std::vector<LightLocalSolver>()),  
+    bsc(std::vector<Bsc>()),                     
+    minus_goal_y_at_x(std::vector<Function>()),                
+    local_search(std::vector<UnconstrainedLocalSearch>()),     
+    fa_lsolve(std::vector<LightOptimMinMax>()),                
+    minus_goal_csp_y_at_x(std::vector<Function>()),            
+    local_search_csp(std::vector<UnconstrainedLocalSearch>()), 
+    fa_loc_solve(std::vector<LightLocalSolver>())   
 {
-    if(!min_goal && xy_sys.goal !=NULL) {
+
+    if(!min_goal && xy_sys_t.goal !=NULL) {
         Array<const ExprNode> args(xy_sys.goal->nb_arg());
         Array<const ExprSymbol> var;
-        for(int i = 0;i<xy_sys.goal->nb_arg();i++) {
-            const ExprSymbol& a = ExprSymbol::new_(xy_sys.goal->arg(i).dim);
+        for(int i = 0;i<xy_sys_t.goal->nb_arg();i++) {
+            const ExprSymbol& a = ExprSymbol::new_(xy_sys_t.goal->arg(i).dim);
             var.add(a);
             args.set_ref(i,a);
         }
-        minus_goal_y_at_x = new Function(var,-(*xy_sys.goal)(args));
-
-        local_search = new UnconstrainedLocalSearch(*minus_goal_y_at_x,IntervalVector(1));
-        lsolve.local_solver = local_search;
-        loc_solve.local_solver_over_y = local_search;
-        loc_solve.local_solver_over_x = new UnconstrainedLocalSearch(*xy_sys.goal,IntervalVector(1));
-
-
-        Affine2Eval* aff_eval = new Affine2Eval(*(xy_sys.goal));
-        lsolve.affine_goal = aff_eval;
-
-        lsolve.goal_abs_prec = goal_rel_prec/100; // set goal prec of maximization problem lower than minimization
-
     }
-
-    Array<const ExprNode> args_csp(max_fa_y_cst_sys.goal->nb_arg());
+    
+    Array<const ExprNode> args_csp(max_fa_y_cst_sys_t.goal->nb_arg());
     Array<const ExprSymbol> var_csp;
-
-    for(int i = 0;i<max_fa_y_cst_sys.goal->nb_arg();i++) {
-        const ExprSymbol& a = ExprSymbol::new_(max_fa_y_cst_sys.goal->arg(i).dim);
+    
+    for(int i = 0 ; i < max_fa_y_cst_sys_t.goal->nb_arg() ; i++) {
+        const ExprSymbol& a = ExprSymbol::new_(max_fa_y_cst_sys_t.goal->arg(i).dim);
         var_csp.add(a);
         args_csp.set_ref(i,a);
     }
+    
+    for (int i = 0 ; i < num_thread ; i ++) {
 
-    minus_goal_csp_y_at_x = new Function(var_csp,-(*max_fa_y_cst_sys.goal)(args_csp));
+        x_ctc.push_back(Ctc(x_ctc_t));
+        x_sys.push_back(System(x_sys_t));
+        lsolve.push_back(LightOptimMinMax(xy_sys_t, xy_ctc, NULL));
+        loc_solve.push_back(LightLocalSolver(xy_sys_t, NULL, NULL, x_ctc_t, x_sys_t.box.size(), xy_sys_t.box.size()-x_sys_t.box.size(), false));
+        bsc.push_back(LargestFirst());  
+        fa_lsolve.push_back(LightOptimMinMax(max_fa_y_cst_sys_t, y_fa_ctc, NULL, true));
+        fa_loc_solve.push_back(LightLocalSolver(xy_sys_t, NULL, NULL, x_ctc_t, x_sys_t.box.size(), xy_sys_t.box.size()-x_sys_t.box.size(), true));
 
-    local_search_csp = new UnconstrainedLocalSearch(*minus_goal_csp_y_at_x,IntervalVector(1));
-    fa_lsolve.local_solver = local_search_csp;
-    fa_loc_solve.local_solver_over_y = local_search_csp;
-    fa_loc_solve.local_solver_over_x = new UnconstrainedLocalSearch(*(max_fa_y_cst_sys.goal),IntervalVector(1));
+        if(!min_goal && xy_sys.goal !=NULL) {
 
+            minus_goal_y_at_x.push_back(Function(var,-(*xy_sys_t.goal)(args)));    
+            local_search.push_back(UnconstrainedLocalSearch(minus_goal_y_at_x[i],IntervalVector(1)));
+            lsolve.local_solver = local_search[i];
+            loc_solve.local_solver_over_y = local_search[i];
+            loc_solve.local_solver_over_x = new UnconstrainedLocalSearch(*xy_sys_t.goal,IntervalVector(1));
+            Affine2Eval* aff_eval = new Affine2Eval(*(xy_sys.goal));
+            lsolve.affine_goal = aff_eval;
+            lsolve.goal_abs_prec = goal_rel_prec/100; // set goal prec of maximization problem lower than minimization
+            fa_lsolve.goal_abs_prec = 1e-2;
+        }
 
-    Affine2Eval* aff_eval_csp = new Affine2Eval(*(max_fa_y_cst_sys.goal));
-    fa_lsolve.affine_goal = aff_eval_csp;
+        minus_goal_csp_y_at_x.push_back(Function(var_csp,-(*max_fa_y_cst_sys_t.goal)(args_csp)));    
+        local_search_csp.push_back(UnconstrainedLocalSearch(minus_goal_csp_y_at_x[i],IntervalVector(1)));
+        fa_lsolve.local_solver = local_search_csp[i];
+        fa_loc_solve.local_solver_over_y = local_search_csp[i];
+        fa_loc_solve.local_solver_over_x = new UnconstrainedLocalSearch(*max_fa_y_cst_sys_t.goal,IntervalVector(1));
+    
+        Affine2Eval* aff_eval_csp = new Affine2Eval(*(max_fa_y_cst_sys_t.goal));
+        fa_lsolve.affine_goal = aff_eval_csp;
+        fa_lsolve.goal_abs_prec = 1e-2;
 
-    fa_lsolve.goal_abs_prec = 1e-2;
-
+    }
 }
 
 //Todo :
@@ -254,7 +272,7 @@ OptimMinMax::~OptimMinMax() {
 
 
 bool OptimMinMax::check_optimizer() {
-    if(x_sys.goal != NULL && lsolve.xy_sys.goal != NULL) { // two objective functions-> error
+    if(x_sys[0].goal != NULL && lsolve[0].xy_sys.goal != NULL) { // two objective functions-> error
         cout<<" Error: Two ojective functions found, choose either x depending function to minimize or x and y depending function for min max optim."<<endl;
         return false;
     }
@@ -266,116 +284,46 @@ Optim::Status OptimMinMax::optimize() {
     bool problem_ok = check_optimizer();
     if(!problem_ok)
         return INFEASIBLE;
-    return optimize(x_sys.box,POS_INFINITY);
+    return optimize(x_sys[0].box,POS_INFINITY);
 }
 
 
 void OptimMinMax::init_lsolve() {
-    lsolve.local_search_iter = local_iter;
-    lsolve.visit_all = visit_all;
+    for (int i = 0 ; i < num_thread ; i ++) {
+        lsolve[i].local_search_iter = local_iter;
+        lsolve[i].visit_all = visit_all;
+    }
 }
 
 
 void OptimMinMax::init_fa_lsolve() {
-    fa_lsolve.local_search_iter = local_iter_csp;
-    fa_lsolve.visit_all = visit_all_csp;
+    for (int i = 0 ; i < num_thread ; i ++) {
+        fa_lsolve[i].local_search_iter = local_iter_csp;
+        fa_lsolve[i].visit_all = visit_all_csp;
+    }
 }
 
 
 void OptimMinMax::init_loc_solve() {
-    loc_solve.min_acpt_diam = min_acpt_diam;
-    loc_solve.nb_optim_iter = nb_optim_iter;
-    loc_solve.nb_sols = nb_sols;
-    loc_solve.y_sol_radius = y_sol_radius;
-    loc_solve.reg_acpt_error = reg_acpt_error;
-    loc_solve.nb_sivia_iter = nb_sivia_iter;
+    for (int i = 0 ; i < num_thread ; i ++) {
+        loc_solve[i].min_acpt_diam = min_acpt_diam;
+        loc_solve[i].nb_optim_iter = nb_optim_iter;
+        loc_solve[i].nb_sols = nb_sols;
+        loc_solve[i].y_sol_radius = y_sol_radius;
+        loc_solve[i].reg_acpt_error = reg_acpt_error;
+        loc_solve[i].nb_sivia_iter = nb_sivia_iter;
+    }
 }
-
-// Todo ::
-void OptimMinMax::local_optimize(const IntervalVector& x_box_ini, double obj_init_bound) {
-
-    cout<<" nb arg of fa cst: "<<fa_lsolve.xy_sys.goal->nb_arg()<<endl;
-    cout<<" nb var of fa cst: "<<fa_lsolve.xy_sys.goal->nb_var()<<endl;
-    Array<const ExprNode> args(fa_lsolve.xy_sys.goal->nb_arg());
-    Array<const ExprSymbol> var;
-    for(int i = 0;i<1;i++) {
-        const ExprSymbol& a = ExprSymbol::new_(fa_lsolve.xy_sys.goal->arg(i).dim);
-        var.add(a);
-        args.set_ref(i,a);
-    }
-
-    cout<<" variable created"<<endl;
-
-    Vector best_sol(x_box_init.size());
-
-    loc_solve.nb_optim_iter = 0;
-    loc_solve.nb_sivia_iter = 0;
-    vector<Vector> max_points;
-    vector<Matrix> max_sols;
-    double loup = obj_init_bound;
-    Vector x_ini = x_box_init.random();
-    cout<<" xini random: "<<x_ini<<endl;
-
-    Cell * root = new Cell(x_ini);
-    lsolve.add_backtrackable(*root,y_box_init,critpr);
-    buffer->cost1().add_backtrackable(*root);
-    buffer->cost2().add_backtrackable(*root);
-
-    lsolve.nb_iter = choose_nbiter(true,false,root);
-    lsolve.prec_y = prec_y;
-    lsolve.list_elem_max = 0;
-    lsolve.visit_all = false;
-    lsolve.optimize(root,loup); // eval maxf(midp,heap_copy), go to minimum prec on y to get a thin enclosure
-    DataMinMax * data_x = &(root->get<DataMinMaxOpti>());
-    cout<<" maximum reached for y = "<<(*(data_x->best_sol))<<endl;
-    cout<<" fmax: "<<data_x->fmax<< " eval at best max point: "<<lsolve.xy_sys.goal->eval(*(data_x->best_sol))<<"  which is "<<*data_x->best_sol<<endl;
-    max_points.push_back(data_x->best_sol->subvector(x_box_init.size(),x_box_init.size()+y_box_init.size()-1).mid());
-
-    delete root;
-
-    // also put some random points....
-    cout<<"y_box init: "<<y_box_init<<endl;
-    for(int i =0;i<2;i++) {
-        max_points.push_back(2*y_box_init.random()-y_box_init.lb());
-        cout<<" add random point "<<max_points.back()<<endl;
-    }
-
-    bool max_not_found = true;
-
-    for(int i = 0; i<100;i++) {
-        loc_sols = pair<std::vector<Vector>,std::vector<Matrix> >(max_points,max_sols);
-        cout<<" optimize with y max ";
-        for(int j=0;j<max_points.size();j++) {
-            cout<<max_points.at(j)<<",  ";
-        }
-        cout<<endl;
-        optimize(x_box_ini,obj_init_bound);
-        cout<<" optimization done, reset loup "<<endl;
-        loup = POS_INFINITY;
-        Cell* x_cell = new Cell(loup_point);
-        lsolve.add_backtrackable(*x_cell,y_box_init,critpr);
-        cout<<"local solve at x = "<<loup_point<<endl;
-        lsolve.nb_iter = choose_nbiter(true,false,x_cell);
-        lsolve.prec_y = prec_y;
-        lsolve.list_elem_max = 0;
-        lsolve.visit_all = false;
-        lsolve.optimize(x_cell,loup);
-        data_x = &(x_cell->get<DataMinMaxOpti>());
-        cout<<" get fmax "<<data_x->fmax<<endl;
-        Vector y_max = data_x->best_sol->subvector(x_box_init.size(),x_box_init.size()+y_box_init.size()-1).mid();
-        cout<<" max_y sol : "<< y_max<<" gives: "<<lsolve.xy_sys.goal->eval(*(data_x->best_sol))<<endl;
-        max_points.push_back(y_max);
-        //		max_not_found &= loc_solve.check_twins(y_max,max_points);
-    }
-    return;
-
-}
-
 
 Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj_init_bound) {
+
+
+    omp_set_dynamic(0); 
+    omp_set_num_threads(4); // omp
+
     cout<<"start optimization"<<endl;
 
-    if (trace) lsolve.trace = trace;
+    if (trace) { lsolve[0].trace = trace };
 
     loup = obj_init_bound;
     uplo = NEG_INFINITY;
@@ -395,58 +343,41 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
     }
     buffer->critpr = heap_prob;
 
-    //************* set light optim minmax solver param *********
-    init_lsolve();
-
-    //************* set csp light optim minmax solver param *********
-    init_fa_lsolve();
-
-    //************* set light local solver param *********
-    init_loc_solve();
+    init_lsolve()   ; //************* set light optim minmax solver param     *********   
+    init_fa_lsolve(); //************* set csp light optim minmax solver param *********
+    init_loc_solve(); //************* set light local solver param            *********
 
     //****** x_heap initialization ********
-    nb_cells=0;
+    nb_cells = 0;
     buffer->flush();
 
     // *** initialisation Algo ***
-    loup_changed=false;
+    loup_changed = false;
     double ymax;
     initial_loup=obj_init_bound;
-    loup_point=x_box_init.mid();
-    time=0;
+    loup_point = x_box_init.mid();
+    time = 0;
     Timer::reset_time();
     Timer::start();
 
-    if(!handle_cell(root))
-        return INFEASIBLE;
-    //    spawn(root);
 
-    update_uplo();
 
     //monitoring variables, used to track upper bound, lower bound, number of elem in y_heap and heap_save at each iteration
-    std::vector<double> ub,lb,nbel,nbyel;
+    std::vector<double> ub, lb, nbel, nbyel;
     long long int nbel_count(0);
-    bool handle_res1,handle_res2;
+    bool handle_res1, handle_res2;
 
-    omp_set_dynamic(0); 
-    omp_set_num_threads(4); // omp
+    if(!handle_cell(root)) { return INFEASIBLE; }
+    update_uplo();
 
     try {
-    // omp
-    #pragma omp parallel shared(/**/)
-    {
-    #pragma omp single
-    {
 
         while (!buffer->empty() && (loup-uplo)>goal_rel_prec) {
-        // omp
-        #pragma omp task
-        {
 
-            //			if (trace >= 2) cout << " buffer " << buffer << endl;
             if (trace >= 2) buffer->print(cout);
-            loup_changed=false;
+            loup_changed = false;
             Cell *c = buffer->pop();
+
             if(monitor) {
                 DataMinMax * data_x = &(c->get<DataMinMaxOpti>());
                 nbel_count -= data_x->y_heap->size();
@@ -471,7 +402,7 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
 
             try {
 
-                pair<Cell*,Cell*> new_cells=bsc->bisect_cell(*c);
+                pair<Cell*,Cell*> new_cells = bsc->bisect_cell(*c);
                 delete c;
                 handle_res1 = handle_cell(new_cells.first);
 
@@ -533,14 +464,11 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
 
             }
 
-        } // omp task
+
 
         }
         if(monitor)
             export_monitor(&ub,&lb,&nbel,&nbyel);
-
-    } // omp parallel
-    } // omp single
 
     }
     catch (TimeOutException& ) {
@@ -565,6 +493,18 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
 }
 
 
+std::vector<Cell*> OptimMinMax::nsect_cell(int n, Cell *c) {
+    int nstep = std::round(log2(n));
+    std::vector<Cell*> cells = std::vector<Cell*>();
+    cells.push_back(*c);
+    for (int i = 0 ; i < nstep ; i++) {
+        cell_pop = 
+        pair<Cell*,Cell*> new_cells = bsc->bisect_cell(*c);
+
+    }
+
+bsc->bisect_cell(*c);
+}
 bool  OptimMinMax::handle_cell(Cell * x_cell) {
     bool local_eval = (!loc_sols.first.empty() || !loc_sols.second.empty());
 

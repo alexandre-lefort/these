@@ -26,7 +26,7 @@ class OptimMinMax : public Optim {
 public:
 
     /* Constructor*/
-    OptimMinMax(NormalizedSystem& x_sys,NormalizedSystem& xy_sys, Ctc& x_ctc,Ctc& xy_ctc,double prec_x,double prec_y,double goal_rel_prec);
+    OptimMinMax(NormalizedSystem& x_sys_t, NormalizedSystem& xy_sys_t, Ctc& x_ctc_t, Ctc& xy_ctc_t, double prec_x, double prec_y, double goal_rel_prec);
 
 //    OptimMinMax(NormalizedSystem& x_sys,NormalizedSystem& xy_sys, Ctc& x_ctc,Ctc& xy_ctc,double prec_x,double prec_y,double goal_rel_prec,Function& max_goal);
 
@@ -35,8 +35,8 @@ public:
      * of constraint functions lower than 0
      */
 
-    OptimMinMax(NormalizedSystem& x_sys,NormalizedSystem& xy_sys,NormalizedSystem& max_fa_y_cst, Ctc& x_ctc,Ctc& xy_ctc,Ctc& y_fa_ctc,
-                             double prec_x,double prec_y,double goal_rel_prec,double fa_cst_prec);
+    OptimMinMax(NormalizedSystem& x_sys_t, NormalizedSystem& xy_sys_t, NormalizedSystem& max_fa_y_cst_t, Ctc& x_ctc_t, Ctc& xy_ctc_t, Ctc& y_fa_ctc_t,
+                             double prec_x, double prec_y, double goal_rel_prec, double fa_cst_prec);
 
 //    OptimMinMax(NormalizedSystem& x_sys,NormalizedSystem& xy_sys,NormalizedSystem& max_fa_y_cst, Ctc& x_ctc,Ctc& xy_ctc,
 //                             double prec_x,double prec_y,double goal_rel_prec,double fa_cst_prec,Function& max_goal,Function& max_goal_fa);
@@ -148,8 +148,6 @@ public:
 
     Status optimize(const IntervalVector& init_box, double obj_init_bound=POS_INFINITY);
     Status optimize();
-    
-    void local_optimize(const IntervalVector& x_box_ini, double obj_init_bound = POS_INFINITY);
 
     inline void set_prec_y(double prec_y) {this->prec_y = prec_y; }
 
