@@ -365,7 +365,7 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
     //monitoring variables, used to track upper bound, lower bound, number of elem in y_heap and heap_save at each iteration
     std::vector<double> ub, lb, nbel, nbyel;
     long long int nbel_count(0);
-    bool handle_res1, handle_res2;
+    vector<bool> handle_res = vector<bool>(num_thread);
 
     if(!handle_cell(root)) { return INFEASIBLE; }
     update_uplo();
@@ -401,39 +401,29 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
             }
 
             try {
-
-                pair<Cell*,Cell*> new_cells = bsc->bisect_cell(*c);
+                // omp
+                std::vector<Cell*> new_cells = nsect_cell(num_thread, *c);
                 delete c;
-                handle_res1 = handle_cell(new_cells.first);
 
-                if(handle_res1 && monitor) {
-                    DataMinMax * data_x1 = &((new_cells.first)->get<DataMinMaxOpti>());
-                    nbel_count += data_x1->y_heap->size();
-                }
+                int i = omp_get_thread_num();
+                handle_res[i] = handle_cell(new_cells[i], i);
+                // end omp
 
-                handle_res2 = handle_cell(new_cells.second);
-
-                if(handle_res2 && monitor) {
-                    DataMinMax * data_x2 = &((new_cells.second)->get<DataMinMaxOpti>());
-                    nbel_count += data_x2->y_heap->size();
+                for (int i = 0 ; i < num_thread < i ++ ) {
+                    if(handle_res[i] && monitor) {
+                        DataMinMax * data_x = &((new_cells[i])->get<DataMinMaxOpti>());
+                        nbel_count += data_x->y_heap->size();
+                    }
                 }
 
                 if (uplo_of_epsboxes == NEG_INFINITY) {
                     cout << " possible infinite minimum " << endl;
                     break;
                 }
+
                 if (loup_changed) {
-                    // In case of a new upper bound (loup_changed == true), all the boxes
-                    // with a lower bound greater than (loup - goal_prec) are removed and deleted.
-                    // Note: if contraction was before bisection, we could have the problem
-                    // that the current cell is removed by contractHeap. See comments in
-                    // older version of the code (before revision 284).
-
-                    ymax=compute_ymax();
-
+                    ymax = compute_ymax();
                     buffer->contract(ymax);
-                    //cout << " now buffer is contracted and min=" << buffer.minimum() << endl;
-
 
                     if (ymax <= NEG_INFINITY) {
                         if (trace) cout << " infinite value for the minimum " << endl;
@@ -452,20 +442,15 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
                     nbyel.push_back(nbel_count);
                 }
 
-
                 Timer::check(timeout);
 
             }
             catch (NoBisectableVariableException& ) {
-                bool res=handle_cell(c);
+                bool res = handle_cell(c,0);
                 if (res) update_uplo_of_epsboxes(c->get<DataMinMaxOpti>().fmax.lb());
                 //if (trace>=1) cout << "epsilon-box found: uplo cannot exceed " << uplo_of_epsboxes << endl;
                 update_uplo(); // the heap has changed -> recalculate the uplo
-
             }
-
-
-
         }
         if(monitor)
             export_monitor(&ub,&lb,&nbel,&nbyel);
@@ -480,8 +465,6 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
     Timer::stop();
     time = Timer::get_time();
 
-    cout<<"threads="<<omp_get_num_threads()<<endl;
-
     if (uplo_of_epsboxes == POS_INFINITY && (loup==POS_INFINITY || (loup==initial_loup && goal_abs_prec==0 && goal_rel_prec==0)))
         return INFEASIBLE;
     else if (loup==initial_loup)
@@ -494,18 +477,29 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
 
 
 std::vector<Cell*> OptimMinMax::nsect_cell(int n, Cell *c) {
+
     int nstep = std::round(log2(n));
-    std::vector<Cell*> cells = std::vector<Cell*>();
-    cells.push_back(*c);
+
+    std::vector<Cell*> cells_1 = std::vector<Cell*>();
+    std::vector<Cell*> cells_2 = std::vector<Cell*>();
+
+    cells_1.push_back(*c);
+
     for (int i = 0 ; i < nstep ; i++) {
-        cell_pop = 
-        pair<Cell*,Cell*> new_cells = bsc->bisect_cell(*c);
-
+        for (int j = 0 ; j < pow(2,i) ; i ++) {
+            pair<Cell*,Cell*> new_cells = bsc->bisect_cell(*cells_1[j]);
+            cells_2.push_back(new_cells.first);
+            cells_2.push_back(new_cells.second);
+        }
+        cells_1 = cells_2;
+        cells_2.clear();
     }
-
-bsc->bisect_cell(*c);
+    std::cout << "n = " << n << " ; nb_cell = " << cells_1.size(); << std::endl;
+    return cells_1;
 }
-bool  OptimMinMax::handle_cell(Cell * x_cell) {
+
+
+bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
     bool local_eval = (!loc_sols.first.empty() || !loc_sols.second.empty());
 
     DataMinMaxOpti * data_x = &(x_cell->get<DataMinMaxOpti>());
@@ -513,48 +507,37 @@ bool  OptimMinMax::handle_cell(Cell * x_cell) {
     ofstream out;
     if(monitor_csp) {
         out.open("paver.txt",std::ios_base::app);
-        if(!out.is_open())
-            cout<<"ERROR: cannot open paver.txt"<<endl;
+        if(!out.is_open()) { cout<<"ERROR: cannot open paver.txt"<<endl; }
     }
 
     //***************** contraction w.r.t constraint on x ****************
-    //        cout<<"checking ctr.... "<<endl;
-    //        cout<<"current box: "<<x_cell->box <<" fmax: "<<data_x->fmax<<endl;
     IntervalVector tmpbox(x_cell->box);
-    int res_cst = check_constraints(x_cell,false);
-    //        cout<<" constraint res: "<<res_cst<<endl;
+    int res_cst = check_constraints(x_cell, false, ith);
     if (res_cst == 0) {
         if(monitor_csp) {
-            for(int i=0; i<tmpbox.size();i++) {
-                out<<tmpbox[i].lb()<<" "<<tmpbox[i].ub()<<" ";
-            }
-            out<<res_cst<<endl;
+            for(int i=0; i<tmpbox.size();i++) { out<<tmpbox[i].lb()<<" "<<tmpbox[i].ub()<<" "; }
+            out << res_cst << endl;
         }
         out.close();
         return false;
-    }
-    else if (res_cst==2 && only_csp) {
+    } else if (res_cst==2 && only_csp) {
         if(monitor_csp) {
-            for(int i=0; i<x_cell->box.size();i++)
-                out<<x_cell->box[i].lb()<<" "<<x_cell->box[i].ub()<<" ";
-            out<<res_cst<<endl;
+            for(int i=0; i<x_cell->box.size();i++) { out<<x_cell->box[i].lb()<<" "<<x_cell->box[i].ub()<<" "; }
+            out << res_cst << endl;
         }
-
         data_x->clear_fsbl_list(); // need to delete elements of fsbl_point_list since this branch is closed and they will not be needed later
         delete x_cell; // need to delete x_cell because not deleted in check cst.
         out.close();
         return false;
-    }
-    else if (data_x->pu != 1)     {
-        x_ctc.contract(x_cell->box);
+    } else if (data_x->pu != 1) {
+        x_ctc[ith].contract(x_cell->box);
         if(x_cell->box.is_empty()) {
             //vol_rejected += x_cell->box.volume();
-            //                        data_x->clear_fsbl_list(); // need to delete elements of fsbl_point_list since this branch is closed and they will not be needed later
+            //data_x->clear_fsbl_list(); // need to delete elements of fsbl_point_list since this branch is closed and they will not be needed later
             delete x_cell;
             //cout<<"loup : "<<loup<<" get for point: x = "<<best_sol<<" y = "<<max_y<<" uplo: "<<uplo<< " volume rejected: "<<vol_rejected/init_vol*100<<endl;
             return false;
         }
-
     }
 
     if(!only_csp) {
@@ -563,44 +546,44 @@ bool  OptimMinMax::handle_cell(Cell * x_cell) {
             Cell *x_copy = new Cell(*x_cell); // copy of the Cell and the y_heap
             bool found_feas_pt = get_feasible_point(x_copy);
             if (found_feas_pt) { // we found a feasible point
-                lsolve.nb_iter = choose_nbiter(true,false,x_cell);
-                lsolve.prec_y = prec_y;
-                lsolve.list_elem_max = 0; // no limit on heap size
-                lsolve.visit_all = false; // no need to visit all leaves in midpoint
+                lsolve[ith].nb_iter = choose_nbiter(true, false, x_cell);
+                lsolve[ith].prec_y = prec_y;
+                lsolve[ith].list_elem_max = 0; // no limit on heap size
+                lsolve[ith].visit_all = false; // no need to visit all leaves in midpoint
                 bool res1;
                 if (!local_eval) {
                     if (min_goal) {
-                        res1 = eval_goal(x_copy,loup);
+                        res1 = eval_goal(x_copy, loup, ith);
                     } else {
-                        lsolve.nb_iter = choose_nbiter(true,false,x_cell);
-                        lsolve.prec_y = prec_y;
-                        lsolve.list_elem_max = 0; // no limit on heap size
-                        lsolve.visit_all = false; // no need to visit all leaves in midpoint
-                        res1 = lsolve.optimize(x_copy,loup); // eval maxf(midp,heap_copy), go to minimum prec on y to get a thin enclosure
+                        lsolve[ith].nb_iter = choose_nbiter(true, false, x_cell);
+                        lsolve[ith].prec_y = prec_y;
+                        lsolve[ith].list_elem_max = 0; // no limit on heap size
+                        lsolve[ith].visit_all = false; // no need to visit all leaves in midpoint
+                        res1 = lsolve[ith].optimize(x_copy, loup); // eval maxf(midp,heap_copy), go to minimum prec on y to get a thin enclosure
                         DataMinMaxOpti * data_x_copy = &(x_copy->get<DataMinMaxOpti>());
                     }
                 } else {
-                    Interval eval = loc_solve.eval_backward_max_solutions(loc_sols,x_copy->box,loup);
-                    if (eval.is_empty())
+                    Interval eval = loc_solve[ith].eval_backward_max_solutions(loc_sols, x_copy->box, loup); // TODO omp : tab of loc_sols
+                    if (eval.is_empty()) {
                         res1 = false;
-                    else {
+                     } else {
                         res1 = true;
                         DataMinMaxOpti * data_x_copy = &(x_copy->get<DataMinMaxOpti>());
                         data_x_copy->fmax = eval;
                     }
                 }
-                lsolve.visit_all = visit_all; // reset visit all to initial value
+                lsolve[ith].visit_all = visit_all; // reset visit all to initial value
                 if (!res1) {
                     delete x_copy;
                 } else {
                     Interval ev = x_copy->get<DataMinMaxOpti>().fmax;
                     IntervalVector ysol = x_copy->get<DataMinMaxOpti>().y_heap->top()->box;
-                    Vector sol = lsolve.best_point_eval.mid();
+                    Vector sol = lsolve[ith].best_point_eval.mid();
                     double new_loup = x_copy->get<DataMinMaxOpti>().fmax.ub();
 
-                    if (new_loup<loup) { // update best current solution
-                        loup = new_loup;
-                        loup_changed = true;
+                    if (new_loup < loup) { // update best current solution
+                        loup = new_loup; // TODO omp : mutex on loup
+                        loup_changed = true; // TODO omp : mutex on loup_changed
                         loup_point = (x_copy->box.mid());
 
                         if (trace) cout << "[mid]"  << " loup update " << loup  << " loup point  " << loup_point << endl;
@@ -611,35 +594,31 @@ bool  OptimMinMax::handle_cell(Cell * x_cell) {
         }
 
         //************ evaluation of f(x,y_heap) *****************
-        lsolve.prec_y = compute_min_prec(x_cell->box,false);
-        lsolve.nb_iter = choose_nbiter(false,false,x_cell);
-        lsolve.list_elem_max = compute_heap_max_size(data_x->y_heap->size(),false);
+        lsolve[ith].prec_y = compute_min_prec(x_cell->box,false);
+        lsolve[ith].nb_iter = choose_nbiter(false, false, x_cell);
+        lsolve[ith].list_elem_max = compute_heap_max_size(data_x->y_heap->size(), false);
 
         bool res;
         if(!local_eval) {
             if(min_goal) { // not a minmax problem, only a min problem-> suffices
-                res = eval_goal(x_cell,loup);
-
+                res = eval_goal(x_cell, loup, ith);
             } else {
-
-                res = lsolve.optimize(x_cell,loup);
+                res = lsolve[ith].optimize(x_cell, loup);
                 double how_far = (data_x->fmax.lb()-uplo)/uplo;
-
                 how_far = 2;
-                if (res && (nb_optim_iter!=0||nb_sivia_iter!=0) && how_far>1)
-                    res = loc_solve.compute_supy_lb(x_cell,uplo,loup,minus_goal_y_at_x);
-
+                if (res && (nb_optim_iter!=0||nb_sivia_iter!=0) && how_far>1) {
+                    res = loc_solve[ith].compute_supy_lb(x_cell, uplo, loup, minus_goal_y_at_x[ith]);
+                }
             }
         } else {
-            Interval eval = loc_solve.eval_backward_max_solutions(loc_sols,x_cell->box,loup);
-            if(eval.is_empty())
+            Interval eval = loc_solve[ith].eval_backward_max_solutions(loc_sols, x_cell->box, loup); // TODO omp : tab of loc_sols
+            if(eval.is_empty()) {
                 res = false;
-            else {
+            } else {
                 res = true;
-                data_x->fmax &= Interval(eval.lb(),POS_INFINITY);
+                data_x->fmax &= Interval(eval.lb(), POS_INFINITY);
             }
         }
-
         if(!res) {
             delete x_cell;
             return false;
@@ -647,16 +626,14 @@ bool  OptimMinMax::handle_cell(Cell * x_cell) {
     }
 
     //***** if x_cell is too small ******************
-    if(x_cell->box.max_diam()<prec) {
-        cout<<"Min prec, box: "<<x_cell->box<<endl;
+    if(x_cell->box.max_diam() < prec) {
+        cout << "Min prec, box: " << x_cell->box << endl;
         int ctr_ok = 2;
         tmpbox = x_cell->box;
-        ctr_ok= check_constraints(x_cell, true);
+        ctr_ok = check_constraints(x_cell, true, ith);
 
         if(only_csp && monitor_csp) {
-            for(int i=0; i<x_cell->box.size();i++) {
-                out<<tmpbox[i].lb()<<" "<<tmpbox[i].ub()<<" ";
-            }
+            for(int i=0; i<x_cell->box.size() ; i++) { out<<tmpbox[i].lb()<<" "<<tmpbox[i].ub()<<" "; }
             out<<ctr_ok<<endl;
             if(ctr_ok!=0) {
                 data_x->clear_fsbl_list(); // need to delete elements of fsbl_point_list since this branch is closed and they will not be needed later
@@ -666,14 +643,14 @@ bool  OptimMinMax::handle_cell(Cell * x_cell) {
             return false;
         }
         if (ctr_ok !=0 && !only_csp) {
-            lsolve.nb_iter = choose_nbiter(true,false,x_cell);   // need to be great enough so the minimum precision on y is reached
-            lsolve.prec_y = prec_y;
-            lsolve.list_elem_max = 0; // no limit on heap size
+            lsolve[ith].nb_iter = choose_nbiter(true, false, x_cell);   // need to be great enough so the minimum precision on y is reached
+            lsolve[ith].prec_y = prec_y;
+            lsolve[ith].list_elem_max = 0; // no limit on heap size
             bool res;
             if(min_goal)
-                res = eval_goal(x_cell,loup);
+                res = eval_goal(x_cell, loup, ith);
             else
-                res = lsolve.optimize(x_cell,loup); // eval maxf(midp,heap_copy), go to minimum prec on y to get a thin enclosure
+                res = lsolve[ith].optimize(x_cell, loup); // eval maxf(midp,heap_copy), go to minimum prec on y to get a thin enclosure
             if(!res) {
                 data_x->clear_fsbl_list(); // need to delete elements of fsbl_point_list since this branch is closed and they will not be needed later
                 delete x_cell;
@@ -687,9 +664,9 @@ bool  OptimMinMax::handle_cell(Cell * x_cell) {
         return false;
     }
 
-    // update optim data of the cell
-    buffer->cost1().set_optim_data(*x_cell,x_sys);
-    buffer->cost2().set_optim_data(*x_cell,x_sys);
+    // update optim data of the cell // TODO : omp : buffer mutex
+    buffer->cost1().set_optim_data(*x_cell, x_sys);
+    buffer->cost2().set_optim_data(*x_cell, x_sys);
     buffer->push(x_cell);
     nb_cells++;
     //        std::cout<<"      final value "<<data_x->fmax <<std::endl;
@@ -698,22 +675,18 @@ bool  OptimMinMax::handle_cell(Cell * x_cell) {
 }
 
 
-bool OptimMinMax::eval_goal(Cell* x_cell,double loup) {
-    //    cout<<"in eval goal"<<endl;
-    x_sys.goal->backward(Interval(NEG_INFINITY,loup),x_cell->box);
-    //    cout<<" backward contraction: "<<x_cell->box<<endl;
-    if(x_cell->box.is_empty())
-        return false;
+bool OptimMinMax::eval_goal(Cell* x_cell, double loup, int ith) {
+
+    x_sys[ith].goal->backward(Interval(NEG_INFINITY, loup), x_cell->box);
+    if(x_cell->box.is_empty()) { return false; }
     DataMinMaxOpti * data_x = &(x_cell->get<DataMinMaxOpti>());
-    data_x->fmax = x_sys.goal->eval(x_cell->box);
-    //    cout<<"box: "<<x_cell->box<<"   evaluation: "<<data_x->fmax<<endl;
-    if(data_x->fmax.lb()>loup)
-        return false;
+    data_x->fmax = x_sys[ith].goal->eval(x_cell->box);
+    if(data_x->fmax.lb()>loup) { return false; }
     return true;
 }
 
 
-double OptimMinMax::compute_min_prec( const IntervalVector& x_box,bool csp) {
+double OptimMinMax::compute_min_prec( const IntervalVector& x_box, bool csp) {
 
     if (!csp) {
         if(min_prec_coef == 0)
@@ -731,7 +704,7 @@ double OptimMinMax::compute_min_prec( const IntervalVector& x_box,bool csp) {
 }
 
 
-int OptimMinMax::choose_nbiter(bool midpoint_eval,bool csp,Cell* x_cell) {
+int OptimMinMax::choose_nbiter(bool midpoint_eval, bool csp, Cell* x_cell) {
 
     if (!midpoint_eval) {
         if(!csp) {
@@ -744,19 +717,17 @@ int OptimMinMax::choose_nbiter(bool midpoint_eval,bool csp,Cell* x_cell) {
         } else {
             DataMinMaxCsp * data_x = &(x_cell->get<DataMinMaxCsp>());
             data_x->nb_bisect+=iter_csp;
-            //            cout<<"nb bisect: "<<data_x->nb_bisect;
             if(propag)
                 return iter_csp;
             else
                 return data_x->nb_bisect;
         }
     }
-    else
-        return 0; // go to min prec
+    else { return 0; }// go to min prec
 }
 
 
-int OptimMinMax::compute_heap_max_size(int y_heap_size,bool csp) {
+int OptimMinMax::compute_heap_max_size(int y_heap_size, bool csp) {
     if (!csp) {
         if(list_rate == 0 || y_heap_size>= list_elem_absolute_max) { // no constraint on list growth rate or max size already reached
             return list_elem_absolute_max;
@@ -770,57 +741,52 @@ int OptimMinMax::compute_heap_max_size(int y_heap_size,bool csp) {
     }
 }
 
-bool OptimMinMax::get_feasible_point(Cell * elem) {
-    //        cout<<endl<<"     get_feasible_point"<<endl;
-    elem->box = elem->box.random(); //
-    //        elem->box = elem->box.mid(); //get the box (x,mid(y))
-    int res = check_constraints(elem,true);
-    //        cout<<"done, res = "<<res<<endl;
-    if(res == 2)
-        return true;
+bool OptimMinMax::get_feasible_point(Cell * elem, int ith) {
+    elem->box = elem->box.mid(); // elem->box = elem->box.mid(); //get the box (x,mid(y))
+    int res = check_constraints(elem, true, ith);  // cout<<"done, res = "<<res<<endl;
+    if(res == 2) { return true; }
     return false;
 }
 
 
-int OptimMinMax::check_regular_ctr(const IntervalVector& box) {
+int OptimMinMax::check_regular_ctr(const IntervalVector& box, int ith) {
     int res =2;
-    for(int i=0;i<x_sys.nb_ctr;i++) {
-        Interval int_res = x_sys.ctrs[i].f.eval(box);
-        if(int_res.lb()>=0)
+    for(int i=0 ; i < x_sys[ith].nb_ctr ; i++) {
+        Interval int_res = x_sys[ith].ctrs[i].f.eval(box);
+        if(int_res.lb() >= 0) {
             return 0;
-        else if(int_res.ub()>=0)
+        } else if(int_res.ub() >= 0) {
             res = 1;
+        }
     }
     return res;
 }
 
 
-int OptimMinMax::check_fa_ctr(Cell* x_cell,bool midp) {
+int OptimMinMax::check_fa_ctr(Cell* x_cell, bool midp, int ith) {
     DataMinMax * data_csp = &(x_cell->get<DataMinMaxCsp>());
     //    cout<<"data_csp->pu: "<<data_csp->pu<<endl;
     if(data_csp->pu != 1) {
-        fa_lsolve.nb_iter = choose_nbiter(midp,true,x_cell);
+        fa_lsolve[ith].nb_iter = choose_nbiter(midp, true, x_cell);
         if(midp) {
-            fa_lsolve.visit_all = false; // no need to visit the heap in midp
-            fa_lsolve.list_elem_max = 0;
-            fa_lsolve.prec_y = prec_fa_y;
+            fa_lsolve[ith].visit_all = false; // no need to visit the heap in midp
+            fa_lsolve[ith].list_elem_max = 0;
+            fa_lsolve[ith].prec_y = prec_fa_y;
         }
         else {
-            fa_lsolve.list_elem_max = compute_heap_max_size(data_csp->y_heap->size(),true);
-            fa_lsolve.prec_y = compute_min_prec(x_cell->box,true);
+            fa_lsolve[ith].list_elem_max = compute_heap_max_size(data_csp->y_heap->size(), true);
+            fa_lsolve[ith].prec_y = compute_min_prec(x_cell->box, true);
         }
-        bool ok= fa_lsolve.optimize(x_cell,0);
-        //        cout<<" res of csp for all maximization eval: "<<data_csp->fmax<<endl;
-        fa_lsolve.visit_all = visit_all_csp; // reset visit all to initial value
+        bool ok = fa_lsolve[ith].optimize(x_cell, 0);
+        fa_lsolve[ith].visit_all = visit_all_csp; // reset visit all to initial value
         if(!ok) {
-            //            cout<<"     fa ctr not satisfied for box: "<<x_cell->box<<endl;
             return 0;
         } else {
             if(data_csp->y_heap->empty()) {
                 data_csp->pu = 1;
-                cout<<" sic validated from empty list"<<endl;
+                cout << " sic validated from empty list" << endl;
                 return 2;
-            } else if(data_csp->y_heap->top1()->get<OptimData>().pf.ub()<0) {
+            } else if(data_csp->y_heap->top1()->get<OptimData>().pf.ub() < 0) {
                 data_csp->pu = 1;
                 data_csp->y_heap->flush();
                 return 2;
@@ -833,14 +799,15 @@ int OptimMinMax::check_fa_ctr(Cell* x_cell,bool midp) {
 }
 
 
-int OptimMinMax::check_constraints(Cell * x_cell, bool midp) {
+int OptimMinMax::check_constraints(Cell * x_cell, bool midp, int ith) {
 
     int res_rctr  = 2;
     int res_factr = 2;
+
     DataMinMaxOpti * data_opt = &(x_cell->get<DataMinMaxOpti>());
 
     if(data_opt->pu != 1)
-        res_rctr = check_regular_ctr(x_cell->box);
+        res_rctr = check_regular_ctr(x_cell->box, ith);
 
     if(res_rctr == 2)
         data_opt->pu = 1;
@@ -851,7 +818,7 @@ int OptimMinMax::check_constraints(Cell * x_cell, bool midp) {
         return 0;
     }
     if(fa_y_cst)
-        res_factr = check_fa_ctr(x_cell,midp);
+        res_factr = check_fa_ctr(x_cell, midp, ith);
     if(res_factr==0)
         delete x_cell;
     if(res_rctr == 2 &&  res_factr == 2) // all ctr satisfied
@@ -863,7 +830,7 @@ int OptimMinMax::check_constraints(Cell * x_cell, bool midp) {
 }
 
 
-void export_monitor(std::vector<double> * ub,std::vector<double> * lb,std::vector<double> * nbxel,std::vector<double> * nbyel) {
+void export_monitor(std::vector<double> * ub, std::vector<double> * lb, std::vector<double> * nbxel, std::vector<double> * nbyel) {
     std::ofstream out;
     //    std::string output_name = "log.txt";
     out.open("log.txt");

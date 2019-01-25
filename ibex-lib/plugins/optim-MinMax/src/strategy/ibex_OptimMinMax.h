@@ -149,6 +149,7 @@ public:
     Status optimize(const IntervalVector& init_box, double obj_init_bound=POS_INFINITY);
     Status optimize();
 
+    std::vector<Cell*> nsect_cell(int n, Cell *c);
     inline void set_prec_y(double prec_y) {this->prec_y = prec_y; }
 
     void   init_lsolve();
