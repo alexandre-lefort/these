@@ -256,7 +256,7 @@ bool LightOptimMinMax::handle_cell( Cell* x_cell,Cell*  y_cell,double loup,bool 
             delete y_cell;
             return true;
         }
-        //                cout<<"xy_box after contraction: "<<y_cell->box<<endl;
+        //  cout<<"xy_box after contraction: "<<y_cell->box<<endl;
     }
     else {
         handle_cstfree(xy_box,y_cell);

@@ -51,24 +51,28 @@ void test_tab() {
 
     NormalizedSystem fa_y_sys_1(fac_fa_y_sys);
 
-    vector<System>      sys_x    = vector<System>(); 
-    vector<System>      sys_xy   = vector<System>(); 
-    vector<CtcIdentity> xy_ctc   = vector<CtcIdentity>();
-    vector<CtcIdentity> x_ctc_id = vector<CtcIdentity>(); 
-    vector<CtcIdentity> fa_y_ctc = vector<CtcIdentity>(); 
+    vector<Ctc&> xy_ctc   ;
+    vector<Ctc&> x_ctc_id ; 
+    vector<Ctc&> fa_y_ctc ; 
+
+    vector<NormalizedSystem&>      sys_x    = vector<NormalizedSystem&>(); 
+    vector<NormalizedSystem&>      sys_xy   = vector<NormalizedSystem&>(); 
+    xy_ctc   = vector<Ctc&>();
+    x_ctc_id = vector<Ctc&>(); 
+    fa_y_ctc = vector<Ctc&>(); 
 
     for (int i = 0; i<num_thread ; i++) {
 
-        sys_x.push_back(System(sys_x_1));
-        sys_xy.push_back(System(sys_xy_1));
+        sys_x.push_back(NormalizedSystem(sys_x_1));
+        sys_xy.push_back(NormalizedSystem(sys_xy_1));
         xy_ctc.push_back(CtcIdentity(x_ini.size() + y_ini.size()));
         x_ctc_id.push_back(CtcIdentity(x_ini.size()));
         fa_y_ctc.push_back(CtcIdentity(x_ini.size()+y_ini.size()));
     }
 
     for (int i = 0 ; i < num_thread ; i++) {
-        //std::cout << sys_x[i].goal   << std::endl;
-        //std::cout << sys_xy[i].goal   << std::endl;
+        std::cout << sys_x[i].goal   << std::endl;
+        std::cout << sys_xy[i].goal   << std::endl;
         std::cout << xy_ctc[i].nb_var   << std::endl;
         std::cout << x_ctc_id[i].nb_var << std::endl;
         std::cout << fa_y_ctc[i].nb_var << std::endl;

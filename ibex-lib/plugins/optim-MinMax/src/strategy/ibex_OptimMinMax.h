@@ -26,20 +26,27 @@ class OptimMinMax : public Optim {
 public:
 
     /* Constructor*/
-    OptimMinMax(NormalizedSystem& x_sys_t, NormalizedSystem& xy_sys_t, Ctc& x_ctc_t, Ctc& xy_ctc_t, double prec_x, double prec_y, double goal_rel_prec);
-
-//    OptimMinMax(NormalizedSystem& x_sys,NormalizedSystem& xy_sys, Ctc& x_ctc,Ctc& xy_ctc,double prec_x,double prec_y,double goal_rel_prec,Function& max_goal);
+    OptimMinMax(std::vector<NormalizedSystem>  x_sys_t        , 
+                std::vector<NormalizedSystem>  xy_sys_t       , 
+                std::vector<Ctc*>              x_ctc_t        , 
+                std::vector<Ctc*>              xy_ctc_t       ,
+                double                         prec_x         , 
+                double                         prec_y         , 
+                double                         goal_rel_prec  );
 
     /* Constructor, with "for all y" constraints
      * for all constraint in the objectif function of max_fa_y_cst lower than 0. If several for all constraints the objectif is equal to the max
-     * of constraint functions lower than 0
-     */
-
-    OptimMinMax(NormalizedSystem& x_sys_t, NormalizedSystem& xy_sys_t, NormalizedSystem& max_fa_y_cst_t, Ctc& x_ctc_t, Ctc& xy_ctc_t, Ctc& y_fa_ctc_t,
-                             double prec_x, double prec_y, double goal_rel_prec, double fa_cst_prec);
-
-//    OptimMinMax(NormalizedSystem& x_sys,NormalizedSystem& xy_sys,NormalizedSystem& max_fa_y_cst, Ctc& x_ctc,Ctc& xy_ctc,
-//                             double prec_x,double prec_y,double goal_rel_prec,double fa_cst_prec,Function& max_goal,Function& max_goal_fa);
+     * of constraint functions lower than 0*/
+    OptimMinMax(std::vector<NormalizedSystem> x_sys_t            , 
+                std::vector<NormalizedSystem> xy_sys_t           , 
+                std::vector<NormalizedSystem> max_fa_y_cst_sys_t , 
+                std::vector<Ctc*>              x_ctc_t            , 
+                std::vector<Ctc*>              xy_ctc_t           , 
+                std::vector<Ctc*>              y_fa_ctc_t         ,
+                double                         prec_x             , 
+                double                         prec_y             , 
+                double                         goal_rel_prec      , 
+                double                         fa_cst_prec        );
 
     /* Runs a B&B like algorithm
      * arguments: -x_ini: initial x box
@@ -130,20 +137,20 @@ public:
     std::pair<std::vector<Vector>,std::vector<Matrix> > loc_sols;
 
 //private:
-    std::vector<Ctc>              x_ctc     ; // contractor w.r.t constraint on x
-    std::vector<NormalizedSystem> x_sys     ; // contains cst on x and objective function
-    std::<LightOptimMinMax>       lsolve    ;
-    std::vector<LightLocalSolver> loc_solve ;
-    std::vector<Bsc>              bsc       ;
+    std::vector<Ctc*>               x_ctc     ; // contractor w.r.t constraint on x
+    std::vector<NormalizedSystem>   x_sys     ; // contains cst on x and objective function
+    std::vector<LightOptimMinMax*>  lsolve    ;
+    std::vector<LightLocalSolver*>  loc_solve ;
+    std::vector<Bsc*>               bsc       ;
 
-    std::vector<Function>                 minus_goal_y_at_x ; // goal function f becomes -f to solve a minimization problem over y at a fixed x
-    std::vector<UnconstrainedLocalSearch> local_search      ;
+    std::vector<Function*>                 minus_goal_y_at_x ; // goal function f becomes -f to solve a minimization problem over y at a fixed x
+    std::vector<UnconstrainedLocalSearch*> local_search      ;
 
     // Cst Factory
-    std::vector<LightOptimMinMax>         fa_lsolve              ;
-    std::vector<Function>                 minus_goal_csp_y_at_x  ; // goal csp function g becomes -g to solve a minimization problem over y at a fixed x
-    std::vector<UnconstrainedLocalSearch> local_search_csp       ;
-    std::vector<LightLocalSolver>         fa_loc_solve           ;
+    std::vector<LightOptimMinMax*>         fa_lsolve              ;
+    std::vector<Function*>                 minus_goal_csp_y_at_x  ; // goal csp function g becomes -g to solve a minimization problem over y at a fixed x
+    std::vector<UnconstrainedLocalSearch*> local_search_csp       ;
+    std::vector<LightLocalSolver*>         fa_loc_solve           ;
 
 
     Status optimize(const IntervalVector& init_box, double obj_init_bound=POS_INFINITY);
@@ -158,15 +165,15 @@ public:
     double compute_min_prec( const IntervalVector& x_box,bool csp);
     int    choose_nbiter(bool midpoint_eval,bool csp,Cell* x_cell);
     int    compute_heap_max_size(int y_heap_size,bool csp);
-    bool   get_feasible_point(Cell * elem);
-    int    check_constraints(Cell * x_cell,bool midp);
-    int    check_regular_ctr(const IntervalVector& box);
-    int    check_fa_ctr(Cell * x_cell,bool midp);
-    bool   handle_cell(Cell * x_cell);
+    bool   get_feasible_point(Cell * elem, int ith);
+    int    check_constraints(Cell * x_cell,bool midp, int ith);
+    int    check_regular_ctr(const IntervalVector& box, int ith);
+    int    check_fa_ctr(Cell * x_cell,bool midp, int ith);
+    bool   handle_cell(Cell * x_cell, int ith);
     bool   spawn(Cell* x_cell); // spawn a cell into subcells from the csp list of loc_solve if perf crit is lower than spawn_thresh
     bool   check_optimizer();
-    bool   eval_goal(Cell* x_cell,double loup);
-    void   show_yheap(Cell * x_cell);
+    bool   eval_goal(Cell* x_cell,double loup, int ith);
+    void   show_yheap(Cell * x_cell, int ith);
 
     //Default parameters for light optim min max solver
     static const int    default_list_rate;
