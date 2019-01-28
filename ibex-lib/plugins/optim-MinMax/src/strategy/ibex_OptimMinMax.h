@@ -26,20 +26,20 @@ class OptimMinMax : public Optim {
 public:
 
     /* Constructor*/
-    OptimMinMax(std::vector<NormalizedSystem>  x_sys_t        , 
-                std::vector<NormalizedSystem>  xy_sys_t       , 
-                std::vector<Ctc*>              x_ctc_t        , 
-                std::vector<Ctc*>              xy_ctc_t       ,
-                double                         prec_x         , 
-                double                         prec_y         , 
-                double                         goal_rel_prec  );
+    OptimMinMax(std::vector<NormalizedSystem*>  x_sys_t        , 
+                std::vector<NormalizedSystem*>  xy_sys_t       , 
+                std::vector<Ctc*>               x_ctc_t        , 
+                std::vector<Ctc*>               xy_ctc_t       ,
+                double                          prec_x         , 
+                double                          prec_y         , 
+                double                          goal_rel_prec  );
 
     /* Constructor, with "for all y" constraints
      * for all constraint in the objectif function of max_fa_y_cst lower than 0. If several for all constraints the objectif is equal to the max
      * of constraint functions lower than 0*/
-    OptimMinMax(std::vector<NormalizedSystem> x_sys_t            , 
-                std::vector<NormalizedSystem> xy_sys_t           , 
-                std::vector<NormalizedSystem> max_fa_y_cst_sys_t , 
+    OptimMinMax(std::vector<NormalizedSystem*> x_sys_t            , 
+                std::vector<NormalizedSystem*> xy_sys_t           , 
+                std::vector<NormalizedSystem*> max_fa_y_cst_sys_t , 
                 std::vector<Ctc*>              x_ctc_t            , 
                 std::vector<Ctc*>              xy_ctc_t           , 
                 std::vector<Ctc*>              y_fa_ctc_t         ,
@@ -134,11 +134,11 @@ public:
     bool   min_goal                   ; // true if minimization problem, false if min max problem
     double prec_fa_y                  ;
 
-    std::pair<std::vector<Vector>,std::vector<Matrix> > loc_sols;
+    std::vector<std::pair<std::vector<Vector>,std::vector<Matrix> >  > loc_sols;
 
 //private:
     std::vector<Ctc*>               x_ctc     ; // contractor w.r.t constraint on x
-    std::vector<NormalizedSystem>   x_sys     ; // contains cst on x and objective function
+    std::vector<NormalizedSystem*>  x_sys     ; // contains cst on x and objective function
     std::vector<LightOptimMinMax*>  lsolve    ;
     std::vector<LightLocalSolver*>  loc_solve ;
     std::vector<Bsc*>               bsc       ;
