@@ -14,7 +14,7 @@
 #include "ibex_NoBisectableVariableException.h"
 #include "ibex_SystemFactory.h"
 
-#include <omp.h>
+#include "omp.h"
 
 #define DEF_NUM_THREAD 8
 
@@ -410,10 +410,11 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
                 // omp
                 std::vector<Cell*> new_cells = nsect_cell(num_thread, c);
                 delete c;
-
+                
+                omp_set_num_threads(8);
                 std::cout << "number of thread = " << omp_get_num_threads() << endl;
                 std::cout << "num_thread" << num_thread << std::endl;
-                #pragma omp parallel num_threads(8)
+                #pragma omp parallel
                 {
                 #pragma omp for
                 for(int ith=0 ; ith < num_thread ; ith++) {
