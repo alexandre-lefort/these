@@ -16,7 +16,7 @@
 
 #include "omp.h"
 
-#define DEF_NUM_THREAD 8
+#define DEF_NUM_THREAD 4
 
 using namespace std;
 
@@ -250,6 +250,9 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*> x_sys_t            ,
         fa_lsolve[i]->goal_abs_prec = 1e-2;
      
     }
+
+    // Test building
+    cout << "lsolve size :" << lsolve.size() << " ; " << fa_lsolve.size() << endl;
 }
 
 //Todo :
@@ -335,13 +338,13 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
 
     cout<<"init 2"<<endl;
 
-    for (int i ; i < num_thread ; i++) {
-        bsc[i]->add_backtrackable(*root);
-        lsolve[i]->add_backtrackable(*root, y_box_init, critpr);
+    //for (int i ; i < num_thread ; i++) {
+        bsc[0]->add_backtrackable(*root);
+        lsolve[0]->add_backtrackable(*root, y_box_init, critpr);
         if(fa_y_cst) {
-            fa_lsolve[i]->add_backtrackable(*root, y_box_init_fa, critpr_csp);
+            fa_lsolve[0]->add_backtrackable(*root, y_box_init_fa, critpr_csp);
         }
-    }
+    //}
     buffer->critpr = heap_prob;
 
     cout<<"init 3"<<endl;
@@ -363,8 +366,6 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
     initial_loup=obj_init_bound;
     loup_point = x_box_init.mid();
     time = 0;
-    Timer::reset_time();
-    Timer::start();
 
     //monitoring variables, used to track upper bound, lower bound, number of elem in y_heap and heap_save at each iteration
     std::vector<double> ub, lb, nbel, nbyel;
@@ -375,6 +376,9 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
 
     if(!handle_cell(root,0)) { return INFEASIBLE; }
     update_uplo();
+
+    Timer::reset_time();
+    Timer::start();
 
     cout<<"start optimization loop"<<endl;
     try {
@@ -411,16 +415,10 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
                 std::vector<Cell*> new_cells = nsect_cell(num_thread, c);
                 delete c;
                 
-                omp_set_num_threads(8);
-                std::cout << "number of thread = " << omp_get_num_threads() << endl;
-                std::cout << "num_thread" << num_thread << std::endl;
-                #pragma omp parallel
+                #pragma omp parallel num_threads(num_thread)
                 {
-                #pragma omp for
-                for(int ith=0 ; ith < num_thread ; ith++) {
-                    std::cout << ith << std::endl;
-                    handle_res[ith] = handle_cell(new_cells[ith], ith);
-                }
+                    int ID = omp_get_thread_num();
+                    handle_res[ID] = handle_cell(new_cells[ID], ID);
                 }
                 // end omp
 
@@ -494,6 +492,7 @@ std::vector<Cell*> OptimMinMax::nsect_cell(int n, Cell *c) {
 
     int nstep = std::floor(log2(n));
 
+    //cout << "step" << nstep << endl;
     std::vector<Cell*> cells_1 = std::vector<Cell*>();
     std::vector<Cell*> cells_2 = std::vector<Cell*>();
 
@@ -508,31 +507,42 @@ std::vector<Cell*> OptimMinMax::nsect_cell(int n, Cell *c) {
         cells_1 = cells_2;
         cells_2.clear();
     }
-    std::cout << "n = " << n << " ; nb_cell = " << cells_1.size() << std::endl;
+
+    //for (int i = 0 ; i < cells_1.size() ; i++) {
+    //    std::cout << *cells_1[i] ;
+    //}
+    //std::cout << std::endl ;
+    //std::cout << "n = " << n << " ; nb_cell = " << cells_1.size() << std::endl;
     return cells_1;
 }
 
 
 bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
 
-    std::cout << "handle cell : " << ith << std::endl;
+    //std::cout << "handle cell : " << ith << " " << *x_cell << std::endl;
+    //std::cout << "size loc sols : " << ith << " " << loc_sols.size() << std::endl;
     bool local_eval = (!loc_sols[ith].first.empty() || !loc_sols[ith].second.empty());
-
+    //std::cout << "handle 100 " << ith << std::endl;
     DataMinMaxOpti * data_x = &(x_cell->get<DataMinMaxOpti>());
-
+    //std::cout << "handle 101 " << ith << std::endl;
     ofstream out;
     if(monitor_csp) {
         out.open("paver.txt",std::ios_base::app);
         if(!out.is_open()) { cout<<"ERROR: cannot open paver.txt"<<endl; }
     }
 
+    //std::cout << "handle 1 " << ith << std::endl;
     //***************** contraction w.r.t constraint on x ****************
     IntervalVector tmpbox(x_cell->box);
     int res_cst = check_constraints(x_cell, false, ith);
+
+    //std::cout << "handle 1bis " << ith << std::endl;
+
     if (res_cst == 0) {
         if(monitor_csp) {
             for(int i=0; i<tmpbox.size();i++) { out<<tmpbox[i].lb()<<" "<<tmpbox[i].ub()<<" "; }
             out << res_cst << endl;
+            //std::cout << "handle 1test1 " << ith << std::endl;
         }
         out.close();
         return false;
@@ -540,12 +550,14 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
         if(monitor_csp) {
             for(int i=0; i<x_cell->box.size();i++) { out<<x_cell->box[i].lb()<<" "<<x_cell->box[i].ub()<<" "; }
             out << res_cst << endl;
+            //std::cout << "handle 1test2 " << ith << std::endl;
         }
         data_x->clear_fsbl_list(); // need to delete elements of fsbl_point_list since this branch is closed and they will not be needed later
         delete x_cell; // need to delete x_cell because not deleted in check cst.
         out.close();
         return false;
     } else if (data_x->pu != 1) {
+        //std::cout << "handle 1test3 " << ith << std::endl;
         x_ctc[ith]->contract(x_cell->box);
         if(x_cell->box.is_empty()) {
             //vol_rejected += x_cell->box.volume();
@@ -555,6 +567,8 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
             return false;
         }
     }
+
+    //std::cout << "handle 2 " << ith << std::endl;
 
     if(!only_csp) {
         //************* point evaluation ****************
@@ -609,6 +623,7 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
             }
         }
 
+        //std::cout << "handle 3 " << ith << std::endl;
         //************ evaluation of f(x,y_heap) *****************
         lsolve[ith]->prec_y = compute_min_prec(x_cell->box,false);
         lsolve[ith]->nb_iter = choose_nbiter(false, false, x_cell);
@@ -640,6 +655,8 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
             return false;
         }
     }
+
+    //std::cout << "handle 4 " << ith << std::endl;
 
     //***** if x_cell is too small ******************
     if(x_cell->box.max_diam() < prec) {
@@ -679,6 +696,8 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
         }
         return false;
     }
+
+    //std::cout << "handle 5 " << ith << std::endl;
 
     // update optim data of the cell // TODO : omp : buffer mutex
     buffer->cost1().set_optim_data(*x_cell, *x_sys[ith]);
@@ -780,10 +799,15 @@ int OptimMinMax::check_regular_ctr(const IntervalVector& box, int ith) {
 
 
 int OptimMinMax::check_fa_ctr(Cell* x_cell, bool midp, int ith) {
+    //cout << " fa_ctr_0" << endl;
+    //cout << *x_cell << endl;
     DataMinMax * data_csp = &(x_cell->get<DataMinMaxCsp>());
+    //cout << " fa_ctr_00" << endl;
     //    cout<<"data_csp->pu: "<<data_csp->pu<<endl;
     if(data_csp->pu != 1) {
+        //cout << " fa_ctr_3" << endl;
         fa_lsolve[ith]->nb_iter = choose_nbiter(midp, true, x_cell);
+        //cout << " fa_ctr_0" << endl;
         if(midp) {
             fa_lsolve[ith]->visit_all = false; // no need to visit the heap in midp
             fa_lsolve[ith]->list_elem_max = 0;
@@ -793,14 +817,16 @@ int OptimMinMax::check_fa_ctr(Cell* x_cell, bool midp, int ith) {
             fa_lsolve[ith]->list_elem_max = compute_heap_max_size(data_csp->y_heap->size(), true);
             fa_lsolve[ith]->prec_y = compute_min_prec(x_cell->box, true);
         }
+        //cout << " fa_ctr_1" << endl;
         bool ok = fa_lsolve[ith]->optimize(x_cell, 0);
+        //cout << " fa_ctr_2" << endl;
         fa_lsolve[ith]->visit_all = visit_all_csp; // reset visit all to initial value
         if(!ok) {
             return 0;
         } else {
             if(data_csp->y_heap->empty()) {
                 data_csp->pu = 1;
-                cout << " sic validated from empty list" << endl;
+                //cout << " sic validated from empty list" << endl;
                 return 2;
             } else if(data_csp->y_heap->top1()->get<OptimData>().pf.ub() < 0) {
                 data_csp->pu = 1;
@@ -811,6 +837,7 @@ int OptimMinMax::check_fa_ctr(Cell* x_cell, bool midp, int ith) {
             else return 1;
         }
     }
+    //cout << " fa_ctr_555" << endl;
     return 2;
 }
 
@@ -821,20 +848,25 @@ int OptimMinMax::check_constraints(Cell * x_cell, bool midp, int ith) {
     int res_factr = 2;
 
     DataMinMaxOpti * data_opt = &(x_cell->get<DataMinMaxOpti>());
-
+//std::cout << "check 1 " << ith << std::endl;
     if(data_opt->pu != 1)
         res_rctr = check_regular_ctr(x_cell->box, ith);
-
+//std::cout << "check 2 " << ith << std::endl;
     if(res_rctr == 2)
         data_opt->pu = 1;
     else if(res_rctr == 0) {
+        //std::cout << "check 3 " << ith << std::endl;
         if(!midp)// do not delete solution list if not box to discard (if mid point evaluation
             data_opt->clear_fsbl_list(); // need to delete elements of fsbl_point_list since this branch is closed and they will not be needed later
         delete x_cell;
         return 0;
     }
-    if(fa_y_cst)
+    //std::cout << "check 4 " << ith << std::endl;
+    if(fa_y_cst) {
+        //std::cout << "check 5 " << ith << std::endl;
         res_factr = check_fa_ctr(x_cell, midp, ith);
+        //std::cout << "check 6 " << ith << std::endl;
+    }
     if(res_factr==0)
         delete x_cell;
     if(res_rctr == 2 &&  res_factr == 2) // all ctr satisfied
@@ -865,12 +897,12 @@ void OptimMinMax::show_yheap(Cell * x_cell, int ith) {
     Cell * y_cell;
     OptimData  *data_y;
 
-    cout<<"   y_heap of box  "<<x_cell->box<< "contains "<<data_opt->y_heap->size()<<" elements: "<<endl;
+    //cout<<"   y_heap of box  "<<x_cell->box<< "contains "<<data_opt->y_heap->size()<<" elements: "<<endl;
     while(!data_opt->y_heap->empty()) {
         y_cell = data_opt->y_heap->pop1();
         data_y = &(y_cell->get<OptimData>());
         //        cout<<"     "<<y_cell->box<<"  eval: "<<data_y->pf<<endl;
-        cout<<"  pointer: "<<y_cell<<endl;
+        //cout<<"  pointer: "<<y_cell<<endl;
         IntervalVector box(x_cell->box.size()+y_cell->box.size());
         box.put(0,x_cell->box);
         box.put(x_cell->box.size(),y_cell->box);

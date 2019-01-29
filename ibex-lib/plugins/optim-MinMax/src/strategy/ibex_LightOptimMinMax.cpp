@@ -138,7 +138,7 @@ bool LightOptimMinMax::optimize(Cell* x_cell,double loup) {
                 }
                 catch (NoBisectableVariableException& ) {
                     bool res = handle_cell(x_cell,y_cell,loup);
-                    cout<<" no bisectable caught"<<endl;
+                    //cout<<" no bisectable caught"<<endl;
 
                     if(!res) return false;
 
@@ -324,12 +324,13 @@ bool LightOptimMinMax::handle_cell( Cell* x_cell,Cell*  y_cell,double loup,bool 
 
     // Update the lower and upper bound on y
     //data_y->pf &= xy_sys.goal->eval_baumann(xy_box); // objective function evaluation
-    if(eval_all(xy_sys.goal,xy_box).ub()>data_y->pf.ub()){
-        cout<<" ************************** CRITICAL ISSUE *******************"<<endl;
-        cout<<" get worst upper bound, should not happen due to monotonicity of ifunc"<<endl;
-        cout << xy_box << endl;
-        cout<<"***************************************************************"<<endl;
-    }
+    // Alex
+    //f(eval_all(xy_sys.goal,xy_box).ub()>data_y->pf.ub()){
+    //   cout<<" ************************** CRITICAL ISSUE *******************"<<endl;
+    //   cout<<" get worst upper bound, should not happen due to monotonicity of ifunc"<<endl;
+    //   cout << xy_box << endl;
+    //   cout<<"***************************************************************"<<endl;
+    //
 
     //        cout<<"    dealing with box: "<<xy_box<<endl;
     //        cout<<"    previous value of pf:  "<<data_y->pf<<endl;
