@@ -18,6 +18,7 @@
 #include "ibex_Bsc.h"
 #include "ibex_Optim.h"
 #include "ibex_LightLocalSolver.h"
+#include "omp.h"
 
 namespace ibex {
 
@@ -32,7 +33,8 @@ public:
                 std::vector<Ctc*>               xy_ctc_t       ,
                 double                          prec_x         , 
                 double                          prec_y         , 
-                double                          goal_rel_prec  );
+                double                          goal_rel_prec  ,
+                int                             num_thread_t   );
 
     /* Constructor, with "for all y" constraints
      * for all constraint in the objectif function of max_fa_y_cst lower than 0. If several for all constraints the objectif is equal to the max
@@ -46,7 +48,8 @@ public:
                 double                         prec_x             , 
                 double                         prec_y             , 
                 double                         goal_rel_prec      , 
-                double                         fa_cst_prec        );
+                double                         fa_cst_prec        ,
+                int                            num_thread_t      );
 
     /* Runs a B&B like algorithm
      * arguments: -x_ini: initial x box
@@ -133,6 +136,8 @@ public:
     bool   fa_y_cst                   ; // indicates if there is for all y constraints
     bool   min_goal                   ; // true if minimization problem, false if min max problem
     double prec_fa_y                  ;
+
+    omp_lock_t bufferlock ;
 
     std::vector<std::pair<std::vector<Vector>,std::vector<Matrix> >  > loc_sols;
 

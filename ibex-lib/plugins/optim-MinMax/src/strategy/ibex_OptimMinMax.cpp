@@ -14,31 +14,27 @@
 #include "ibex_NoBisectableVariableException.h"
 #include "ibex_SystemFactory.h"
 
-#include "omp.h"
-
-#define DEF_NUM_THREAD 4
-
 using namespace std;
 
 namespace ibex {
 
 //********* Default parameters for light optim minmax solver ************
-const int OptimMinMax::default_iter = 10;
-const int OptimMinMax::default_list_rate = 0;
-const double OptimMinMax::default_min_prec_coef = 10;
-const int OptimMinMax::default_list_elem_absolute_max = 500;
-const int OptimMinMax::default_prob_heap = 10; //10% to pop second heap in light_solver
-const int OptimMinMax::default_local_iter = 0;
-const bool OptimMinMax::default_visit_all = false;
+const int OptimMinMax::default_iter                   = 10    ;
+const int OptimMinMax::default_list_rate              = 0     ;
+const double OptimMinMax::default_min_prec_coef       = 10    ;
+const int OptimMinMax::default_list_elem_absolute_max = 500   ;
+const int OptimMinMax::default_prob_heap              = 10    ; //10% to pop second heap in light_solver
+const int OptimMinMax::default_local_iter             = 0     ;
+const bool OptimMinMax::default_visit_all             = false ;
 
 //********* Default parameters for light local solver ************
 
-const double OptimMinMax::default_nb_sols = 5;
-const double OptimMinMax::default_min_acpt_diam=1e-2;
-const int OptimMinMax::default_nb_sivia_iter=0;
-const int OptimMinMax::default_nb_optim_iter=0;
-const double OptimMinMax::default_y_sol_radius = 0.15;
-const double OptimMinMax::default_reg_acpt_error = 1e-1;
+const double OptimMinMax::default_nb_sols             = 5    ;
+const double OptimMinMax::default_min_acpt_diam       = 1e-2 ;
+const int OptimMinMax::default_nb_sivia_iter          = 0    ;
+const int OptimMinMax::default_nb_optim_iter          = 0    ;
+const double OptimMinMax::default_y_sol_radius        = 0.15 ;
+const double OptimMinMax::default_reg_acpt_error      = 1e-1 ;
 
 const int OptimMinMax::default_nb_point = 1;
 const double OptimMinMax::default_perf_thresh = 0.3;
@@ -60,7 +56,8 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*>  x_sys_t        ,
                          std::vector<Ctc*>               xy_ctc_t       ,
                          double                          prec_x         , 
                          double                          prec_y         , 
-                         double                          goal_rel_prec  ):
+                         double                          goal_rel_prec  ,
+                         int                             num_thread_t   ):
     Optim(x_sys_t[0]->nb_var, new CellDoubleHeap(*new CellCostFmaxlb_opt(), *new CellCostFmaxub_opt()),
           prec_x, goal_rel_prec, 0, 1), // attention meme precision en relatif et en absolue
     x_box_init(x_sys_t[0]->box),
@@ -68,7 +65,7 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*>  x_sys_t        ,
     y_box_init_fa(IntervalVector(1)),  
     propag(true),
     trace_freq(10000),
-    num_thread(DEF_NUM_THREAD),
+    num_thread(num_thread_t),
     list_rate(default_list_rate),
     list_elem_absolute_max(default_list_elem_absolute_max),
     iter(default_iter),
@@ -131,8 +128,8 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*>  x_sys_t        ,
            }
            minus_goal_y_at_x.push_back(new Function(var,-(*(xy_sys_t[i]->goal))(args)));    
            local_search.push_back(new UnconstrainedLocalSearch(*minus_goal_y_at_x[i],IntervalVector(1)));
-           lsolve[i]->local_solver = local_search[i];
-           loc_solve[i]->local_solver_over_y = local_search[i];
+           lsolve[i]->local_solver = new UnconstrainedLocalSearch(*minus_goal_y_at_x[i],IntervalVector(1)); //local_search[i];
+           loc_solve[i]->local_solver_over_y = new UnconstrainedLocalSearch(*minus_goal_y_at_x[i],IntervalVector(1)); //local_search[i];
            loc_solve[i]->local_solver_over_x = new UnconstrainedLocalSearch(*(xy_sys_t[i]->goal),IntervalVector(1));
            Affine2Eval* aff_eval = new Affine2Eval(*(xy_sys_t[i]->goal));
            lsolve[i]->affine_goal = aff_eval;
@@ -141,6 +138,7 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*>  x_sys_t        ,
        }
    }
 
+   omp_init_lock(&bufferlock); // omp
 };
 
  // Todo :
@@ -153,7 +151,8 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*> x_sys_t            ,
                          double                         prec_x             , 
                          double                         prec_y             , 
                          double                         goal_rel_prec      , 
-                         double                         fa_cst_prec        ):
+                         double                         fa_cst_prec        ,
+                         int                            num_thread_t       ):
     Optim(x_sys_t[0]->nb_var, new CellDoubleHeap(*new CellCostFmaxlb_opt(), *new CellCostFmaxub_opt()),
           prec_x, goal_rel_prec, goal_rel_prec, 1), // attention meme precision en relatif et en absolue
     x_box_init(x_sys_t[0]->box),
@@ -161,7 +160,7 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*> x_sys_t            ,
     y_box_init_fa(max_fa_y_cst_sys_t[0]->box.subvector(x_sys_t[0]->nb_var, max_fa_y_cst_sys_t[0]->nb_var-1)),
     propag(true),
     trace_freq(10000),
-    num_thread(DEF_NUM_THREAD),
+    num_thread(num_thread_t),
     list_rate(default_list_rate),
     list_elem_absolute_max(default_list_elem_absolute_max),
     iter(default_iter),
@@ -222,8 +221,8 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*> x_sys_t            ,
             }
             minus_goal_y_at_x.push_back(new Function(var,-(*(xy_sys_t[i]->goal))(args)));    
             local_search.push_back(new UnconstrainedLocalSearch(*minus_goal_y_at_x[i], IntervalVector(1)));
-            lsolve[i]->local_solver = local_search[i];
-            loc_solve[i]->local_solver_over_y = local_search[i];
+            lsolve[i]->local_solver = new UnconstrainedLocalSearch(*minus_goal_y_at_x[i], IntervalVector(1)); //local_search[i];
+            loc_solve[i]->local_solver_over_y = new UnconstrainedLocalSearch(*minus_goal_y_at_x[i], IntervalVector(1)); //local_search[i];
             loc_solve[i]->local_solver_over_x = new UnconstrainedLocalSearch(*(xy_sys_t[i]->goal), IntervalVector(1));
             Affine2Eval* aff_eval = new Affine2Eval(*(xy_sys_t[i]->goal));
             lsolve[i]->affine_goal = aff_eval;
@@ -241,8 +240,8 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*> x_sys_t            ,
      
         minus_goal_csp_y_at_x.push_back(new Function(var_csp,-(*(max_fa_y_cst_sys_t[i]->goal))(args_csp)));    
         local_search_csp.push_back(new UnconstrainedLocalSearch(*minus_goal_csp_y_at_x[i], IntervalVector(1)));
-        fa_lsolve[i]->local_solver = local_search_csp[i];
-        fa_loc_solve[i]->local_solver_over_y = local_search_csp[i];
+        fa_lsolve[i]->local_solver = new UnconstrainedLocalSearch(*minus_goal_csp_y_at_x[i], IntervalVector(1)); //local_search_csp[i];
+        fa_loc_solve[i]->local_solver_over_y = new UnconstrainedLocalSearch(*minus_goal_csp_y_at_x[i], IntervalVector(1)); //local_search_csp[i];
         fa_loc_solve[i]->local_solver_over_x = new UnconstrainedLocalSearch(*(max_fa_y_cst_sys_t[i]->goal), IntervalVector(1));
       
         Affine2Eval* aff_eval_csp = new Affine2Eval(*(max_fa_y_cst_sys_t[i]->goal));
@@ -251,8 +250,8 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*> x_sys_t            ,
      
     }
 
-    // Test building
-    cout << "lsolve size :" << lsolve.size() << " ; " << fa_lsolve.size() << endl;
+    omp_init_lock(&bufferlock); // omp
+
 }
 
 //Todo :
@@ -268,8 +267,20 @@ OptimMinMax::~OptimMinMax() {
         delete buffer;
     }
     cout<<"buffer deleted"<<endl;
-    //delete bsc;
-    cout<<"bsc deleted"<<endl;
+
+    omp_destroy_lock(&bufferlock); // omp
+
+    for (int i = 0 ; i < num_thread ; i++) {
+        delete(local_search[i]);
+        delete(local_search_csp[i]);
+        delete(lsolve[i]);
+        delete(loc_solve[i]);
+        delete(bsc[i]);
+        delete(minus_goal_y_at_x[i]);
+        delete(fa_lsolve[i]); 
+        delete(minus_goal_csp_y_at_x[i]); 
+        delete(fa_loc_solve[i]);
+    }  
 }
 
 
@@ -323,8 +334,6 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
 
     if (trace) { lsolve[0]->trace = trace; };
 
-    cout<<"init 1"<<endl;
-
     loup = obj_init_bound;
     uplo = NEG_INFINITY;
     uplo_of_epsboxes = POS_INFINITY;
@@ -336,26 +345,19 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
     buffer->cost1().add_backtrackable(*root);
     buffer->cost2().add_backtrackable(*root);
 
-    cout<<"init 2"<<endl;
+    bsc[0]->add_backtrackable(*root);
+    lsolve[0]->add_backtrackable(*root, y_box_init, critpr);
+    if(fa_y_cst) {
+        fa_lsolve[0]->add_backtrackable(*root, y_box_init_fa, critpr_csp);
+    }
 
-    //for (int i ; i < num_thread ; i++) {
-        bsc[0]->add_backtrackable(*root);
-        lsolve[0]->add_backtrackable(*root, y_box_init, critpr);
-        if(fa_y_cst) {
-            fa_lsolve[0]->add_backtrackable(*root, y_box_init_fa, critpr_csp);
-        }
-    //}
     buffer->critpr = heap_prob;
-
-    cout<<"init 3"<<endl;
 
     init_lsolve()   ; //************* set light optim minmax solver param     *********   
     init_fa_lsolve(); //************* set csp light optim minmax solver param *********
     init_loc_solve(); //************* set light local solver param            *********
 
     //****** x_heap initialization ********
-
-    cout<<"init 4"<<endl;
 
     nb_cells = 0;
     buffer->flush();
@@ -372,8 +374,6 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
     long long int nbel_count(0);
     vector<bool> handle_res = vector<bool>(num_thread);
 
-    cout<<"init 5"<<endl;
-
     if(!handle_cell(root,0)) { return INFEASIBLE; }
     update_uplo();
 
@@ -381,6 +381,7 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
     Timer::start();
 
     cout<<"start optimization loop"<<endl;
+
     try {
         while (!buffer->empty() && (loup-uplo)>goal_rel_prec) {
 
@@ -519,30 +520,23 @@ std::vector<Cell*> OptimMinMax::nsect_cell(int n, Cell *c) {
 
 bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
 
-    //std::cout << "handle cell : " << ith << " " << *x_cell << std::endl;
-    //std::cout << "size loc sols : " << ith << " " << loc_sols.size() << std::endl;
     bool local_eval = (!loc_sols[ith].first.empty() || !loc_sols[ith].second.empty());
-    //std::cout << "handle 100 " << ith << std::endl;
     DataMinMaxOpti * data_x = &(x_cell->get<DataMinMaxOpti>());
-    //std::cout << "handle 101 " << ith << std::endl;
     ofstream out;
     if(monitor_csp) {
         out.open("paver.txt",std::ios_base::app);
         if(!out.is_open()) { cout<<"ERROR: cannot open paver.txt"<<endl; }
     }
 
-    //std::cout << "handle 1 " << ith << std::endl;
+
     //***************** contraction w.r.t constraint on x ****************
     IntervalVector tmpbox(x_cell->box);
     int res_cst = check_constraints(x_cell, false, ith);
-
-    //std::cout << "handle 1bis " << ith << std::endl;
 
     if (res_cst == 0) {
         if(monitor_csp) {
             for(int i=0; i<tmpbox.size();i++) { out<<tmpbox[i].lb()<<" "<<tmpbox[i].ub()<<" "; }
             out << res_cst << endl;
-            //std::cout << "handle 1test1 " << ith << std::endl;
         }
         out.close();
         return false;
@@ -550,14 +544,12 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
         if(monitor_csp) {
             for(int i=0; i<x_cell->box.size();i++) { out<<x_cell->box[i].lb()<<" "<<x_cell->box[i].ub()<<" "; }
             out << res_cst << endl;
-            //std::cout << "handle 1test2 " << ith << std::endl;
         }
         data_x->clear_fsbl_list(); // need to delete elements of fsbl_point_list since this branch is closed and they will not be needed later
         delete x_cell; // need to delete x_cell because not deleted in check cst.
         out.close();
         return false;
     } else if (data_x->pu != 1) {
-        //std::cout << "handle 1test3 " << ith << std::endl;
         x_ctc[ith]->contract(x_cell->box);
         if(x_cell->box.is_empty()) {
             //vol_rejected += x_cell->box.volume();
@@ -567,8 +559,6 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
             return false;
         }
     }
-
-    //std::cout << "handle 2 " << ith << std::endl;
 
     if(!only_csp) {
         //************* point evaluation ****************
@@ -593,7 +583,7 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
                         DataMinMaxOpti * data_x_copy = &(x_copy->get<DataMinMaxOpti>());
                     }
                 } else {
-                    Interval eval = loc_solve[ith]->eval_backward_max_solutions(loc_sols[ith], x_copy->box, loup); // TODO omp : tab of loc_sols
+                    Interval eval = loc_solve[ith]->eval_backward_max_solutions(loc_sols[ith], x_copy->box, loup); 
                     if (eval.is_empty()) {
                         res1 = false;
                      } else {
@@ -610,20 +600,22 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
                     IntervalVector ysol = x_copy->get<DataMinMaxOpti>().y_heap->top()->box;
                     Vector sol = lsolve[ith]->best_point_eval.mid();
                     double new_loup = x_copy->get<DataMinMaxOpti>().fmax.ub();
-
+                    
+                    
                     if (new_loup < loup) { // update best current solution
+                        omp_set_lock(&bufferlock);
                         loup = new_loup; // TODO omp : mutex on loup
                         loup_changed = true; // TODO omp : mutex on loup_changed
                         loup_point = (x_copy->box.mid());
-
+                        omp_unset_lock(&bufferlock);
                         if (trace) cout << "[mid]"  << " loup update " << loup  << " loup point  " << loup_point << endl;
                     }
+                    
                     delete x_copy; // delete copy of the heap, no more use and it was not delete in light optim since res1 = 1
                 }
             }
         }
 
-        //std::cout << "handle 3 " << ith << std::endl;
         //************ evaluation of f(x,y_heap) *****************
         lsolve[ith]->prec_y = compute_min_prec(x_cell->box,false);
         lsolve[ith]->nb_iter = choose_nbiter(false, false, x_cell);
@@ -656,8 +648,6 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
         }
     }
 
-    //std::cout << "handle 4 " << ith << std::endl;
-
     //***** if x_cell is too small ******************
     if(x_cell->box.max_diam() < prec) {
         cout << "Min prec, box: " << x_cell->box << endl;
@@ -689,7 +679,9 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
                 delete x_cell;
             }
             else{
+                omp_set_lock(&bufferlock);
                 update_uplo_of_epsboxes(data_x->fmax.lb());
+                omp_unset_lock(&bufferlock);
                 data_x->clear_fsbl_list(); // need to delete elements of fsbl_point_list since this branch is closed and they will not be needed later
                 delete x_cell;
             }
@@ -697,13 +689,13 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
         return false;
     }
 
-    //std::cout << "handle 5 " << ith << std::endl;
-
     // update optim data of the cell // TODO : omp : buffer mutex
+    omp_set_lock(&bufferlock);
     buffer->cost1().set_optim_data(*x_cell, *x_sys[ith]);
     buffer->cost2().set_optim_data(*x_cell, *x_sys[ith]);
     buffer->push(x_cell);
     nb_cells++;
+    omp_unset_lock(&bufferlock);
     //        std::cout<<"      final value "<<data_x->fmax <<std::endl;
     //        cout<<"done, exit handle_cell()"<<endl;
     return true;
@@ -799,15 +791,13 @@ int OptimMinMax::check_regular_ctr(const IntervalVector& box, int ith) {
 
 
 int OptimMinMax::check_fa_ctr(Cell* x_cell, bool midp, int ith) {
-    //cout << " fa_ctr_0" << endl;
-    //cout << *x_cell << endl;
+
     DataMinMax * data_csp = &(x_cell->get<DataMinMaxCsp>());
-    //cout << " fa_ctr_00" << endl;
-    //    cout<<"data_csp->pu: "<<data_csp->pu<<endl;
+
     if(data_csp->pu != 1) {
-        //cout << " fa_ctr_3" << endl;
+
         fa_lsolve[ith]->nb_iter = choose_nbiter(midp, true, x_cell);
-        //cout << " fa_ctr_0" << endl;
+
         if(midp) {
             fa_lsolve[ith]->visit_all = false; // no need to visit the heap in midp
             fa_lsolve[ith]->list_elem_max = 0;
@@ -817,16 +807,14 @@ int OptimMinMax::check_fa_ctr(Cell* x_cell, bool midp, int ith) {
             fa_lsolve[ith]->list_elem_max = compute_heap_max_size(data_csp->y_heap->size(), true);
             fa_lsolve[ith]->prec_y = compute_min_prec(x_cell->box, true);
         }
-        //cout << " fa_ctr_1" << endl;
+
         bool ok = fa_lsolve[ith]->optimize(x_cell, 0);
-        //cout << " fa_ctr_2" << endl;
         fa_lsolve[ith]->visit_all = visit_all_csp; // reset visit all to initial value
         if(!ok) {
             return 0;
         } else {
             if(data_csp->y_heap->empty()) {
                 data_csp->pu = 1;
-                //cout << " sic validated from empty list" << endl;
                 return 2;
             } else if(data_csp->y_heap->top1()->get<OptimData>().pf.ub() < 0) {
                 data_csp->pu = 1;
@@ -837,7 +825,6 @@ int OptimMinMax::check_fa_ctr(Cell* x_cell, bool midp, int ith) {
             else return 1;
         }
     }
-    //cout << " fa_ctr_555" << endl;
     return 2;
 }
 
@@ -848,24 +835,18 @@ int OptimMinMax::check_constraints(Cell * x_cell, bool midp, int ith) {
     int res_factr = 2;
 
     DataMinMaxOpti * data_opt = &(x_cell->get<DataMinMaxOpti>());
-//std::cout << "check 1 " << ith << std::endl;
     if(data_opt->pu != 1)
         res_rctr = check_regular_ctr(x_cell->box, ith);
-//std::cout << "check 2 " << ith << std::endl;
     if(res_rctr == 2)
         data_opt->pu = 1;
     else if(res_rctr == 0) {
-        //std::cout << "check 3 " << ith << std::endl;
         if(!midp)// do not delete solution list if not box to discard (if mid point evaluation
             data_opt->clear_fsbl_list(); // need to delete elements of fsbl_point_list since this branch is closed and they will not be needed later
         delete x_cell;
         return 0;
     }
-    //std::cout << "check 4 " << ith << std::endl;
     if(fa_y_cst) {
-        //std::cout << "check 5 " << ith << std::endl;
         res_factr = check_fa_ctr(x_cell, midp, ith);
-        //std::cout << "check 6 " << ith << std::endl;
     }
     if(res_factr==0)
         delete x_cell;

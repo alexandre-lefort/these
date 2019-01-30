@@ -19,14 +19,26 @@ using namespace std;
 namespace ibex{
 
 
-const double LightOptimMinMax::default_timeout = 30;
+const double LightOptimMinMax::default_timeout = 2;
 const double LightOptimMinMax::default_goal_abs_prec = 0;
 
 
-LightOptimMinMax::LightOptimMinMax(NormalizedSystem& y_sys, Ctc& ctc_xy,UnconstrainedLocalSearch *local_solver,bool csp_actif):
-    trace(false) , timeout(default_timeout), local_search_iter(0),
-    ctc_xy(ctc_xy),xy_sys(y_sys),local_solver(local_solver), bsc(new LargestFirst()), prec_y(0), found_point(false), time(0),
-    list_elem_max(0),nb_iter(0),monitor(false), csp_actif(csp_actif),goal_abs_prec(default_goal_abs_prec),
+LightOptimMinMax::LightOptimMinMax(
+    NormalizedSystem& y_sys, 
+    Ctc& ctc_xy,
+    UnconstrainedLocalSearch *local_solver,bool csp_actif):
+    trace(false) ,
+    timeout(default_timeout),
+    local_search_iter(0),
+    ctc_xy(ctc_xy),
+    xy_sys(y_sys),
+    local_solver(local_solver),
+    bsc(new LargestFirst()), prec_y(0), found_point(false), time(0),
+    list_elem_max(0),
+    nb_iter(0),
+    monitor(false),
+    csp_actif(csp_actif),
+    goal_abs_prec(default_goal_abs_prec),
     best_point_eval(y_sys.box){}
 
 
@@ -325,12 +337,14 @@ bool LightOptimMinMax::handle_cell( Cell* x_cell,Cell*  y_cell,double loup,bool 
     // Update the lower and upper bound on y
     //data_y->pf &= xy_sys.goal->eval_baumann(xy_box); // objective function evaluation
     // Alex
-    //f(eval_all(xy_sys.goal,xy_box).ub()>data_y->pf.ub()){
-    //   cout<<" ************************** CRITICAL ISSUE *******************"<<endl;
-    //   cout<<" get worst upper bound, should not happen due to monotonicity of ifunc"<<endl;
-    //   cout << xy_box << endl;
-    //   cout<<"***************************************************************"<<endl;
-    //
+    if(eval_all(xy_sys.goal,xy_box).ub() > data_y->pf.ub() + 10e-13) {
+       cout<<" ************************** CRITICAL ISSUE *******************"<<endl;
+       cout<<" get worst upper bound, should not happen due to monotonicity of ifunc"<<endl;
+       cout << xy_box << endl;
+       cout << eval_all(xy_sys.goal,xy_box).ub() - data_y->pf.ub() << endl;
+
+       cout<<"***************************************************************"<<endl;
+    }
 
     //        cout<<"    dealing with box: "<<xy_box<<endl;
     //        cout<<"    previous value of pf:  "<<data_y->pf<<endl;
