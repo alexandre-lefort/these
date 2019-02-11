@@ -1,0 +1,349 @@
+################################################################
+#                                                              #
+# Donnees definissant un modele de navire pour DYSCO PC V2.3.0 #
+#               A. Martin - 21/10/2009                         #
+#             modele défini dans le document :                 #
+#         E0152-042_C - DOSSIER JUSTIFICATIF DU DIV            #
+#                                                              #
+################################################################
+
+#
+## Commentaire ou description du contenu du fichier
+[COMMENTAIRE]
+Scorpene Chili Maquette MAX - Modèle de référence avec recalages expé
+
+
+#
+## Identification du navire
+[NAVIRE]
+Nom = Scorpene_chili_mer
+Type = Sous-marin avec barres en croix
+
+#
+## Quelques caracteristiques geometriques
+[GEOMETRIE]
+A = 0.33172365
+L = 6.960168
+CRemp = 9.750000E-001
+Xg = -0.00140E+000
+Yg = 0.000000E+000
+Zg = 0.02314
+XTAL = 4.000000E-001
+XTR4 = 0.600000E+000
+XTPR = 0.000000E+000
+XTB2 = 6.000000E-001
+XMZ = -1.825000E-001
+XMM = -3.100000E-001
+XYNL = -4.600000E-001
+XZNL = -4.100000E-001
+XB = 8.000000E-002
+ZB = -9.000000E-002
+XAR = -4.800000E-001
+Aj = 5.000000E-001
+Bj = 0.000000E+000
+
+#
+## Modele de matrice d'inertie generalisee
+[MATRICE D'INERTIE]
+Modele de matrice : Std_001
+Mu = 1.000
+Mu_1 = 5.000000E-002
+Mu_2 = 1.190000E+000
+Mu_3 = 8.780000E-001
+Mu_13 = 0.000000E+000
+Nu_15 = 0.000000E+000
+Nu_24 = -8.100000E-003
+Nu_26 = -1.570000E-002
+Nu_35 = -1.140000E-002
+X_1 = 0.0009
+
+#X_2 = 0.055   ref COPLAN-SCH
+X_2 = 0.0665
+X_2 = 0.0665
+X_3 = 0.0764
+X_13 = 0.000000E+000
+Lambda_1 = 0.0007
+
+#Lambda_2 = 0.0554   ref COPLAN-SCH
+Lambda_2 = 0.0667
+Lambda_3 = 0.0765
+Lambda_13 = -2.000000E-003
+Fin des donnees matricielles
+
+#
+## Modeles pour les efforts
+[MODELES D'EFFORTS]
+Modele Cx SM
+Cx0 = -1.420000E-001
+CxAL2 = -3.080000E-001
+CxB12 = -2.690000E-001
+CxB22 = -3.770000E-001
+CxV2 = 1.960000E+000
+CxW2 = 1.200000E+000
+CxVr = 2.320000E+000
+CxWQ = -1.712000E+000
+CxPR = 0.000000E+000
+CxQ2 = 0.000000E+000
+CxR2 = 0.000000E+000
+CxV = 0.000000E+000
+----- Fin des donnees pour ce modele -----
+Modele Cy SM
+Cy0 = 0.00
+CyV = -6.578000E+000
+CyR = 4.090000E-001
+CyP = -5.000000E-001
+CyAL = -7.250000E-001
+CyDAD = -1.580000E+000
+CyD3 = -2.420000E+000
+CyDLAL = -1.000000E-001
+CyAL3 = 0.000000E+000
+CyAL4 = 1.328000E+000
+CyDLEP = -2.500000E+001
+CyR4 = 0.000000E+000
+CyPR = 0.000000E+000
+CyR2Q = 0.000000E+000
+CyR2W = 0.000000E+000
+CyVW = 0.000000E+000
+CyWP = 0.000000E+000
+CyQR = 0.000000E+000
+----- Fin des donnees pour ce modele -----
+Modele Cz SM
+Cz0 = -0.009
+CzW = -2.700000E+000  
+CzQ = -6.200000E-001
+CzB1 = -7.030000E-001
+CzB2 = -5.040000E-001
+CzEAE = -5.820000E+000
+CzE3 = -2.75000E+000
+CzEPB1 = -5.000000E-001
+CzB13 = 4.180000E-001
+CzB14 = 0.000000E+000
+CzB24 = 3.261000E+000
+CzWB2 = 0.000000E+000
+CzQB2 = -1.000000E-001
+CzRAB2 = 0.000000E+000
+CzDL2 = 3.260000E+001
+CzR4 = -3.200000E+000
+CzPR = 0.000000E+000
+CzR2Q = 0.000000E+000
+CzR2W = 0.000000E+000
+CzVW = 0.000000E+000
+CzVP = 0.000000E+000
+CzQR = 0.000000E+000
+----- Fin des donnees pour ce modele -----
+Modele Cl SM
+Cl0 = 0.02000E+000
+ClV = -2.600000E-001
+ClR = -8.000000E-003
+ClP = -2.500000E-002
+ClAL = -1.400000E-002
+ClWA = 0.000000E+000
+ClVB1 = -2.500000E-001
+ClVB2 = 0.000000E+000
+ClVW = 5.50000E-001
+ClVQ = 0.000000E+000
+ClWP = 0.000000E+000
+ClWR = 0.000000E+000
+ClPQ = 0.000000E+000
+ClQR = 0.000000E+000
+ClVAV = 0.000000E+000
+ClPAP = 0.000000E+000
+----- Fin des donnees pour ce modele -----
+Modele Cm SM
+Cm0 = 0.005
+CmW = 8.300000E-001
+CmQ = -3.800000E-001
+CmB1 = -3.230000E-001
+CmB2 = 9.60000E-002
+CmEAE = -2.970000+000
+CmE3 = 1.80000+000
+CmEPB1 = -2.500000E-001
+CmB13 = 1.470000E-001
+CmB14 = 0.000000E+000
+CmB24 = -6.160000E-001
+CmWB2 = 0.000000E+000
+CmQB2 = 3.500000E-001
+CmRAB2 = 0.000000E+000
+CmDL2 = 1.02200000E+001
+CmR4 = -1.1200000E+000
+CmPR = 0.000000E+000
+CmR2Q = 0.000000E+000
+CmR2W = 0.000000E+000
+CmVW = 0.000000E+000
+CmVP = 0.000000E+000
+CmQR = 0.000000E+000
+----- Fin des donnees pour ce modele -----
+Modele Cn SM
+# Cn0 = 0.0095 modele SCH
+Cn0 = -0.003
+CnV = -1.637000E+000
+CnR = -3.700000E-001
+CnP = -7.000000E-002
+CnAL = 3.300000E-001
+CnDAD = 1.930000E+000
+CnD3 = -2.390000E+000
+CnDLAL = 2.000000E-001
+CnAL3 = 0.000000E+000
+CnAL4 = -5.600000E-001
+CnDLEP = 5.000000E+000
+CnR4 = 0.000000E+000
+CnPR = 0.000000E+000
+CnR2Q = 0.000000E+000
+CnR2W = 0.000000E+000
+CnVW = 0.000000E+000
+CnVP = 0.000000E+000
+CnQR = 0.000000E+000
+----- Fin des donnees pour ce modele -----
+
+
+#
+## Caracteristiques des barres et des safrans
+[BARRES/SAFRANS]
+  Barres arrieres
+    Butee minimale : -3.839700E-00
+    Butee maximale : 3.839700E-00
+    Vitesse        : 6.981300E-00
+  Barres avants
+    Butee minimale : -3.839700E-00
+    Butee maximale : 3.839700E-00
+    Vitesse        : 6.981300E-00
+  Safrans de direction
+    Butee minimale : -1.55850536
+    Butee maximale : 1.55850536
+    Vitesse        : 6.981317E-00
+
+#
+## Definition d'un propulseur
+[PROPULSEUR]
+J   = -1.000000E+000,-8.000000E-001,-5.000000E-001,-3.000000E-001,-1.000000E-002,1.000000E-002,7.000000E-001,8.000000E-001,9.000000E-001,1.000000E+000
+KV  = -2.430000E-001,-2.180000E-001,-1.890000E-001,-1.730000E-001,-1.510000E-001,3.570000E-001,2.880000E-001,2.700000E-001,2.500000E-001,2.280000E-001
+KQ  = -7.090000E-002,-5.620000E-002,-4.460000E-002,-4.440000E-002,-5.180000E-002,6.510000E-002,4.950000E-002,4.770000E-002,4.580000E-002,4.380000E-002
+1/J = -1.000000E+000,-8.000000E-001,-6.000000E-001,-4.000000E-001,-2.000000E-001,2.000000E-001,4.000000E-001,6.000000E-001,8.000000E-001,1.000000E+000
+CV  = -2.430000E-001,-1.800000E-001,-1.340000E-001,-1.110000E-001,-1.070000E-001,-8.160000E-002,-4.750000E-002,1.060000E-002,1.050000E-001,2.280000E-001
+CQ  = -7.090000E-002,-6.520000E-002,-4.240000E-002,-3.320000E-002,-2.980000E-002,-1.990000E-002,-7.880000E-003,7.740000E-003,2.410000E-002,4.380000E-002
+D = 0.37736
+Rendement = 1
+
+
+
+#
+## Definition d'un ballast
+[BALLAST]
+Nom     : Ballast1
+Position:  -31.413  0.00000E+00  0.00000E+00
+Volume  :   26.171
+
+#
+## Definition d'un ballast
+[BALLAST]
+Nom     : Ballast2
+Position:  -28.316  0.00000E+00  0.00000E+00
+Volume  :   34.133
+
+#
+## Definition d'un ballast
+[BALLAST]
+Nom     : Ballast3
+Position:   22.131  0.00000E+00  0.00000E+00
+Volume  :   37.008
+
+#
+## Definition d'un ballast
+[BALLAST]
+Nom     : Ballast4
+Position:   24.225  0.00000E+00  0.00000E+00
+Volume  :   48.394
+
+#
+## Definition d'un système de chasse de ballast
+[CHASSE]
+Nom        : rap-pcap
+Pression   :   0.5000E+08
+Masse d'air:   942.6
+Debit      :   74.35
+K          :   1.4
+Branchement:
+  Ballast2,0.5
+  Ballast3,0.5
+
+
+#
+## Definition d'un système de chasse de ballast
+[CHASSE]
+Nom        : rap-mcap
+Pression   :   0.5000E+08
+Masse d'air:   471.3
+Debit      :   37.18
+K          :   1.4
+Branchement:
+  Ballast2,0.5
+  Ballast3,0.5
+
+#
+## Definition d'un système de chasse de ballast
+[CHASSE]
+Nom        : normale
+Pression   :   0.25000E+08
+Masse d'air:   0.89270E+03
+Debit      :   17.42
+K          :   1.4
+Branchement:
+  Ballast1,0.18
+  Ballast2,0.234
+  Ballast3,0.254
+  Ballast4,0.332
+
+#
+## Definition d'un système de chasse de ballast
+[CHASSE]
+Nom        : normaleB1
+Pression   :   0.25000E+08
+Masse d'air:   0.89270E+03
+Debit      :   3.1356
+K          :   1.4
+Branchement:
+  Ballast1,1.0
+  Ballast2,0.0
+  Ballast3,0.0
+  Ballast4,0.0
+
+
+#
+## Definition d'une voie d'eau
+[VOIE D'EAU]
+Nom        : ARR
+Position   :  -26.15  0.00000E+00  0.00000E+00
+Section    :   0.00502655
+Coefficient:   0.8
+
+
+#
+## Definition d'une voie d'eau
+[VOIE D'EAU]
+Nom        : MILIEU
+#Position   :  0.55  0.00000E+00  0.00000E+00
+#Position   :  2.85  0.00000E+00  0.00000E+00
+Position   :  9.55  0.00000E+00  0.00000E+00
+Section    :   0.00502655
+Coefficient:   0.8
+
+[REGLEUR]
+Nom        : regleur1
+Position   : -0.122 -0.003 1.3
+Volume     : 7.375
+Volume initial : 3.5
+Qmax en entree : 0.004166666
+Qmax en sortie : 0.002222222
+#Qmax en sortie : 0.004166666
+
+#
+##Données pour le modèle de dépesées utilisateur
+[DEPESEES UTILISATEUR]
+Nom=Dépesées due à l'immersion
+Fichier de donnees=contraction.dat
+
+#
+## Definition d'un pilote automatique utilisateur
+[PILOTE UTILISATEUR]
+Nom=Pilote auto
+
