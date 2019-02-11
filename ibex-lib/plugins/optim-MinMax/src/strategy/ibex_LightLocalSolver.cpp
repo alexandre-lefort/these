@@ -28,7 +28,7 @@ LightLocalSolver::~LightLocalSolver() {
 bool LightLocalSolver::compute_supy_lb(Cell* x_cell,double uplo,double loup,Function* minus_goal = NULL) {
     perf_ctc_coef = 1;
 //    local_sols.clear();
-    std::cout<<"nb sols: "<<nb_sols<<std::endl;
+    //std::cout<<"nb sols: "<<nb_sols<<std::endl;
     DataMinMax *data_x;
     if (csp_actif )
         data_x = &(x_cell->get<DataMinMaxCsp>());
@@ -54,7 +54,7 @@ bool LightLocalSolver::compute_supy_lb(Cell* x_cell,double uplo,double loup,Func
 //        return true;
 
     if(local_solutions.first.empty() && local_solutions.second.empty()) {
-        std::cout<<"       LghtLoc: no solution to launch optim -> abort"<<std::endl;
+        //std::cout<<"       LghtLoc: no solution to launch optim -> abort"<<std::endl;
         return true;
     }
 
@@ -71,10 +71,10 @@ bool LightLocalSolver::compute_supy_lb(Cell* x_cell,double uplo,double loup,Func
         }
 //                    std::cout<<"      LghtLoc: compute volume of list..."<<std::endl;
         double list_vol = list_volume(csp_lower_loup_boxes);
-        std::cout<<"      LghtLoc: init x_cell box volume: "<<x_cell->box.volume()<<std::endl
-                <<"            volume after sivia: "<<list_vol<<std::endl<<"              size of csp list: "<<csp_lower_loup_boxes.size()<<std::endl;
+        //std::cout<<"      LghtLoc: init x_cell box volume: "<<x_cell->box.volume()<<std::endl
+        //        <<"            volume after sivia: "<<list_vol<<std::endl<<"              size of csp list: "<<csp_lower_loup_boxes.size()<<std::endl;
         IntervalVector ctc_x_box = list_hull_box(csp_lower_loup_boxes);
-        std::cout<<"      LghtLoc: vol of hullbox: "<<ctc_x_box.volume()<<std::endl;
+        //std::cout<<"      LghtLoc: vol of hullbox: "<<ctc_x_box.volume()<<std::endl;
         x_cell->box = ctc_x_box;
         csp_queue = csp_lower_loup_boxes;
         perf_ctc_coef = list_vol/x_cell->box.volume()*csp_queue.size()/(2*nb_sivia_iter); // contraction volume gain times ratio number of elements upon max list elem
@@ -89,12 +89,12 @@ bool LightLocalSolver::compute_supy_lb(Cell* x_cell,double uplo,double loup,Func
     }
 
     // run global optim over x at the y of global_xy_sol to upper the lower bound lb:  fy(x)> lb for all x in [x]
-    std::cout<<"      LghtLoc: starting optim"<<std::endl;
+    //std::cout<<"      LghtLoc: starting optim"<<std::endl;
     if(nb_optim_iter>0)
     {
-        std::cout<<"      LghtLoc: compute lb"<<std::endl;
+        //std::cout<<"      LghtLoc: compute lb"<<std::endl;
         double global_lb_at_y = compute_lb(csp_lower_loup_boxes,local_solutions,x_cell,loup);
-        std::cout<<"      LghtLoc: lower bound at y_sol after global optim: "<<global_lb_at_y<<std::endl;
+        //std::cout<<"      LghtLoc: lower bound at y_sol after global optim: "<<global_lb_at_y<<std::endl;
         if (global_lb_at_y>loup) // E y such as f([x],y) > loup => prune [x]
             return false;
         else {
@@ -218,7 +218,7 @@ std::vector<Vector> LightLocalSolver::reject_far_y_sol(const Vector& global_sol,
         admissible_box[i] = Interval(global_sol[x_dim+i]-rad[i]*y_sol_radius,global_sol[x_dim+i]+rad[i]*y_sol_radius);
 //        admissible_box[i] = Interval(mean[i]-rad[i]*y_sol_radius,mean[i]+rad[i]*y_sol_radius);
     }
-    std::cout<<"    admissible box: "<<admissible_box<<std::endl;
+    //std::cout<<"    admissible box: "<<admissible_box<<std::endl;
     while(!local_sols.empty()) {
         Vector sol = local_sols.back();
 //        std::cout<<"  local sol associated: "<<sol<<std::endl;
@@ -362,7 +362,7 @@ double LightLocalSolver::compute_lb(std::queue<std::pair<IntervalVector,Interval
         OptimData  *data = &(subx_cell->get<OptimData>());
         data->pf = x_list.front().second;
         x_heap->push(subx_cell);
-        std::cout<<"     push "<<subx_cell->box<<" in x_list "<<std::endl;
+        //std::cout<<"     push "<<subx_cell->box<<" in x_list "<<std::endl;
         x_list.pop();
     }
     bsc->add_backtrackable(*subx_cell);
@@ -390,8 +390,8 @@ double LightLocalSolver::compute_lb(std::queue<std::pair<IntervalVector,Interval
             deriv = coefs.first[0]/data->pf.lb();
         }
 
-        std::cout<<"uplo : "<<data->pf.lb()<<" loup: "<<x_loup<<" diam : "<<diam<<"     deriv: "<<deriv<<std::endl;
-        std::cout<<"    nb iter: "<<iter<<"  size of x_heap: "<<x_heap->size()<<std::endl;
+        //std::cout<<"uplo : "<<data->pf.lb()<<" loup: "<<x_loup<<" diam : "<<diam<<"     deriv: "<<deriv<<std::endl;
+        //std::cout<<"    nb iter: "<<iter<<"  size of x_heap: "<<x_heap->size()<<std::endl;
         iter++;
         subx_cell = x_heap->pop();
         //std::cout<<"     pop "<<subx_cell->box<<std::endl;
@@ -519,7 +519,7 @@ double LightLocalSolver::compute_lb(std::queue<std::pair<IntervalVector,Interval
         lb = x_heap->top()->get<OptimData>().pf.lb();
         x_heap->flush();
     }
-    std::cout<<"            LghtLox: optim process finished"<<std::endl;
+    //std::cout<<"            LghtLox: optim process finished"<<std::endl;
     return lb;
 }
 
@@ -672,11 +672,11 @@ std::pair<std::vector<Vector>,std::vector<Matrix> > LightLocalSolver::get_local_
 
         Vector candidate = candidates.back();
         candidates.pop_back();
-        std::cout<<" candidate: "<<candidate<<std::endl;
+        //std::cout<<" candidate: "<<candidate<<std::endl;
         std::vector<Vector> local_sols = supy_local_sols(candidate,x_cell);
 //        std::cout<<"nb of local sol: "<<local_sols.size()<<std::endl;
         std::vector<Vector> kept_sols = local_sols;// reject_far_y_sol(candidate,local_sols);
-        std::cout<<"nb of kept sol: "<<local_sols.size()<<std::endl;
+        //std::cout<<"nb of kept sol: "<<local_sols.size()<<std::endl;
         if(local_sols.empty())
             continue;
 
@@ -685,14 +685,14 @@ std::pair<std::vector<Vector>,std::vector<Matrix> > LightLocalSolver::get_local_
         //        }
         IntervalVector hullb = hull_ysol_box(candidate,kept_sols);
 //        std::cout<<"nb of kept sol: "<<kept_sols.size()<<std::endl;
-        std::cout<<"      LghtLoc: hullbox of y sols "<<hullb<<std::endl;
+        //std::cout<<"      LghtLoc: hullbox of y sols "<<hullb<<std::endl;
         if(hullb.is_empty())
             continue;
 
         // evaluation at a given y, generally useless since done by mid_y eval in lightoptimminmax, yet usefull if lightoptimminmax not used
 
         if(hullb.max_diam()<min_acpt_diam) {// y of global sol seems to be solution at several x in [x] of sup fx(y)
-            std::cout<<" candidate is point"<<std::endl;
+            //std::cout<<" candidate is point"<<std::endl;
 
             //        IntervalVector x_box_y_sol(search_box_over_x(global_xy_sol,x_cell));
 //            IntervalVector x_box_y_sol(set_x_box_y_vect(x_cell->box,hullb.mid()));
@@ -732,7 +732,7 @@ std::pair<std::vector<Vector>,std::vector<Matrix> > LightLocalSolver::get_local_
             std::pair<Matrix,Vector> reg = affine_regression(kept_sols);
 
             if(reg.second.size()==0) {
-                std::cout<<"      LghtLoc: regression impossible (non inversible matrix)"<<std::endl;
+                //std::cout<<"      LghtLoc: regression impossible (non inversible matrix)"<<std::endl;
                 continue;
             }
 
@@ -753,7 +753,7 @@ std::pair<std::vector<Vector>,std::vector<Matrix> > LightLocalSolver::get_local_
             //        }
             IntervalVector reg_y_box = y_param.submatrix(0,y_dim-1,0,x_dim-1)*x_cell->box+y_param.col(x_dim);
             //        std::cout<<"reg y box: "<<reg_y_box<<std::endl<<" subset of "<<xy_sys.box.subvector(x_dim,x_dim+y_dim-1)<<" ? "<<reg_y_box.is_subset(xy_sys.box.subvector(x_dim,x_dim+y_dim-1))<<std::endl;
-                    std::cout<<"max of error: "<<reg.second.max()<<" acpt reg error: "<<reg_acpt_error<<std::endl;
+                    //std::cout<<"max of error: "<<reg.second.max()<<" acpt reg error: "<<reg_acpt_error<<std::endl;
             if(reg.second.max()<reg_acpt_error & reg_y_box.is_subset(xy_sys.box.subvector(x_dim,x_dim+y_dim-1))) // regression error acceptable and alpha*[x] + beta contained in [y].
             {
                 regression_parameters.push_back(y_param);
