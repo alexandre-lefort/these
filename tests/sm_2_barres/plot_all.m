@@ -9,16 +9,20 @@ load('criterias.mat');
 
 model_sm = build_model_lin();
 
+ctrl_gains.kpz1= 1.0712    ;    
+ctrl_gains.kdz1= 0.9998    ; 
+ctrl_gains.kpt1= -10.3220  ;   
+ctrl_gains.kdt1= -9.0197   ;  
+ctrl_gains.kpz2= -0.3585   ;  
+ctrl_gains.kdz2= -0.0221   ;  
+ctrl_gains.kpt2= -1.8123   ;  
+ctrl_gains.kdt2= -0.8398   ;  
+ctrl_gains.kiz1=   0.001   ;  
 
-ctrl_gains.kpz =  1.95703  ;
-ctrl_gains.kdz = -3.78041  ;
-ctrl_gains.kpt = -6.84096  ;
-ctrl_gains.kdt = -0.487614 ;
-ctrl_gains.kiz =  0.264851 ;
 
 model_ctrl = build_controller(ctrl_gains);
 
-logw = -2:0.01:1.0;
+logw = -2:0.1:1.0;
 w = 10.^(logw);
 nw = length(w);
 
@@ -35,10 +39,10 @@ end
 
 size_f = 24;
 
-%% plot_step;
+plot_step;
 
 %% Plot bodes
 
-plot_bodes(criterias, model_ctrl, model_sm, p0vect,size_f);
+%% plot_bodes(criterias, model_ctrl, model_sm, p0vect,size_f);
 
-%% plot_sm(model_sm, p0vect, size_f);
+%%plot_sm(model_sm, p0vect, size_f);

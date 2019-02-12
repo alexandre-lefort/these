@@ -36,23 +36,29 @@ for ii=1:nCzW
         Z     = mesure.Data(:,1);
         Theta = mesure.Data(:,2);
         Beta1 = commande.Data(:,1);
-
+        Beta2 = commande.Data(:,2);
         grid on; hold on;
         
-        subplot(3,1,1); hold on;
+        subplot(4,1,1); hold on;
         plot(tt, Z, 'b');
         y = ylabel('Depth (m)');
         set(y,'Interpreter','latex','FontSize',size_f);
         grid on;
         
-        subplot(3,1,2); hold on;
+        subplot(4,1,2); hold on;
         plot(tt, Theta*180/pi, 'b');
         y = ylabel('Pitch ($^{\circ}$)');
         set(y,'Interpreter','latex','FontSize',size_f);
         grid on;
         
-        subplot(3,1,3); hold on;
+        subplot(4,1,3); hold on;
         plot(tt, Beta1*180/pi, 'b');
+        y = ylabel('Plane ($^{\circ}$)');
+        set(y,'Interpreter','latex','FontSize',size_f);
+        grid on;
+
+        subplot(4,1,4); hold on;
+        plot(tt, Beta2*180/pi, 'b');
         y = ylabel('Plane ($^{\circ}$)');
         set(y,'Interpreter','latex','FontSize',size_f);
         grid on;

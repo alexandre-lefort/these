@@ -7,43 +7,53 @@ model_sm = build_model_lin();
 
 
 Q = eye(4);
-R = 1;
+R = eye(2);
 Klq = lqr(model_sm.sys0.a, model_sm.sys0.b, Q, R) ;
 
-ctrl_gains.kpz = Klq(3);
-ctrl_gains.kdz = Klq(1);
-ctrl_gains.kpt = Klq(4);
-ctrl_gains.kdt = Klq(2);
-ctrl_gains.kiz = 0.001;
+ctrl_gains.kpz1 = Klq(1,3);
+ctrl_gains.kdz1 = Klq(1,1);
+ctrl_gains.kpt1 = Klq(1,4);
+ctrl_gains.kdt1 = Klq(1,2);
+ctrl_gains.kpz2 = Klq(2,3);
+ctrl_gains.kdz2 = Klq(2,1);
+ctrl_gains.kpt2 = Klq(2,4);
+ctrl_gains.kdt2 = Klq(2,2);
+ctrl_gains.kiz1 = 0.001;
 
 
 syms s;
 
-logw = -2:0.0001:1;
+logw = -2:0.1:1;
 w    = 10.^(logw); %% Pulsation vector
 
-disp(ctrl_gains);
+ disp(ctrl_gains);
+ 
+ load('criterias.mat');
+ 
+ czz1 = symtbx_sym_subs_from_struct(criterias.zz1, model_sm.p0);
+ czz1 = simplify(symtbx_sym_subs_from_struct(czz1, ctrl_gains));
 
-load('criterias.mat');
+ czz1_bode  = eval(max(abs(subs(czz1,'w', w))));
 
-czz1 = symtbx_sym_subs_from_struct(criterias.zz1, model_sm.p0);
-czz1 = simplify(symtbx_sym_subs_from_struct(czz1, ctrl_gains));
-czz1_bode  = eval(max(abs(subs(czz1,'w', w))));
-
-disp(czz1_bode);
-
-czz2 = symtbx_sym_subs_from_struct(criterias.zz2, model_sm.p0);
-czz2 = simplify(symtbx_sym_subs_from_struct(czz2, ctrl_gains));
-czz2_bode  = eval(max(abs(subs(czz2,'w', w))));
-
-disp(czz2_bode);
-
-czb = symtbx_sym_subs_from_struct(criterias.zb, model_sm.p0);
-czb = simplify(symtbx_sym_subs_from_struct(czb, ctrl_gains));
-czb_bode  = eval(max(abs(subs(czb, 'w', w))));
-
-disp(czb_bode);
-
+ disp(czz1_bode);
+ 
+ czz2 = symtbx_sym_subs_from_struct(criterias.zz2, model_sm.p0);
+ czz2 = simplify(symtbx_sym_subs_from_struct(czz2, ctrl_gains));
+ czz2_bode  = eval(max(abs(subs(czz2,'w', w))));
+ 
+ disp(czz2_bode);
+ 
+ czb1 = symtbx_sym_subs_from_struct(criterias.zb1, model_sm.p0);
+ czb1 = simplify(symtbx_sym_subs_from_struct(czb1, ctrl_gains));
+ czb1_bode  = eval(max(abs(subs(czb1, 'w', w))));
+ 
+ disp(czb1_bode);
+ 
+ czb2 = symtbx_sym_subs_from_struct(criterias.zb2, model_sm.p0);
+ czb2 = simplify(symtbx_sym_subs_from_struct(czb2, ctrl_gains));
+ czb2_bode  = eval(max(abs(subs(czb2, 'w', w))));
+ 
+ disp(czb1_bode);
 
 for ii=1:5
         crit = criterias.stab_lc{ii};
@@ -52,4 +62,4 @@ for ii=1:5
         disp(eval(crit));
 end
 
-disp(max(max(max(czz1_bode),max(czz2_bode)),max(czb_bode)));
+disp(max(max(max(max(czz1_bode),max(czz2_bode)),max(max(czb1_bode),max(czb1_bode)))));

@@ -72,7 +72,7 @@ void LightOptimMinMax::add_backtrackable(Cell& root, const IntervalVector& y_ini
     data_x->y_heap->critpr = critpr;
 }
 
-bool LightOptimMinMax::optimize(Cell* x_cell,double loup) {
+bool LightOptimMinMax::optimize(Cell* x_cell, double loup) {
 
     delete_save_heap();
 
@@ -92,13 +92,17 @@ bool LightOptimMinMax::optimize(Cell* x_cell,double loup) {
 
     IntervalVector xy_box = xy_box_hull(x_cell->box);
     ctc_xy.contract(xy_box);
+    //if (csp_actif) cout << "fa_lsolve1" << endl;
 
     if(xy_box.is_empty()) {
+        //if (csp_actif) cout << "xy_box is empty" << endl;
         return false;
     } else {
         // contract the result on x
         x_cell->box &= xy_box.subvector(0,x_cell->box.size()-1);
+        //cout << x_cell->box << endl;
     }
+    //if (csp_actif) cout << "fa_lsolve11 : " << local_search_iter << endl;
     if(local_search_iter>0)
     {
         double lower_bound_ls = local_search_process(x_cell->box,xy_box,loup);
@@ -107,6 +111,7 @@ bool LightOptimMinMax::optimize(Cell* x_cell,double loup) {
         }
         //            cout<<"local optim return new lb: "<< lower_bound_ls<<endl;
         if(lower_bound_ls>loup) {
+            //if (csp_actif) cout << "lower bound inf : " << lower_bound_ls << " " << loup << endl;
             return false;
         }
         else {
@@ -117,10 +122,11 @@ bool LightOptimMinMax::optimize(Cell* x_cell,double loup) {
     std::vector<double> ub,lb,nbel,nbel_save;
 
     save_heap_ub = NEG_INFINITY;
-
+    //if (csp_actif) cout << "fa_lsolve2" << endl;
     // *********** loop ********************
     try {
         int current_iter = 1;
+        //cout << "start light loop " << endl;
         while(!stop_crit_reached(current_iter,y_heap,data_x->fmax)) {
             if (trace >= 3) std::cout<< *y_heap<<std::endl;
 
@@ -128,6 +134,7 @@ bool LightOptimMinMax::optimize(Cell* x_cell,double loup) {
 
             Cell * y_cell = y_heap->pop(); // we extract an element with critprob probability to take it according to the first crit
             current_iter++;
+            //if (csp_actif) cout << "fa_lsolve3 : " << current_iter << endl;
             
             if((list_elem_max != 0 && ((y_heap->size() + heap_save.size())>list_elem_max)) || (y_cell->box.size())<prec_y) {
                 bool res = handle_cell( x_cell, y_cell,loup);
@@ -137,6 +144,7 @@ bool LightOptimMinMax::optimize(Cell* x_cell,double loup) {
             } else {
                 try {
                     std::pair<Cell*,Cell*> subcells_pair=bsc->bisect_cell(*y_cell);// bisect tmp_cell into 2 subcells
+                    //if (csp_actif) cout << "y_cell = " << *y_cell << endl;
                     delete y_cell;
                     bool res = handle_cell( x_cell, subcells_pair.first,loup);
                     if (!res) { // x_cell has been deleted
@@ -156,6 +164,7 @@ bool LightOptimMinMax::optimize(Cell* x_cell,double loup) {
 
                 }
             }
+            //if (csp_actif) cout << "fa_lsolve4 : " << current_iter << endl;
             if(monitor) {
                 if(!y_heap->empty()) {
                     lb.push_back(data_x->fmax.lb());
@@ -225,7 +234,7 @@ bool LightOptimMinMax::optimize(Cell* x_cell,double loup) {
     for(int i=0;i<xy_sys.box.size()-x_cell->box.size();i++) {
         best_point_eval[x_cell->box.size()+i] = y_heap->top1()->box[i].mid();
     }
-
+    if (csp_actif) cout << "loup light = " << loup << endl;
     return true;
 }
 
@@ -233,15 +242,18 @@ bool LightOptimMinMax::optimize(Cell* x_cell,double loup) {
 bool LightOptimMinMax::stop_crit_reached(int current_iter,DoubleHeap<Cell> * y_heap,const Interval& fmax) {
     if(nb_iter !=0 && current_iter>=nb_iter) // nb_iter ==  0 implies minimum precision required (may be mid point x case)
     {
+        //cout << "current_iter = " << current_iter << endl;
         return true;
     }
 
     if(y_heap->size() == 0) {
         //            cout<<"Stop light solver: empty buffer"<<endl;
+        //cout << "empty y_heap "  << endl;
         return true;
     }
     if (csp_actif && (y_heap->top1()->get<OptimData>().pf.ub() < 0) ) { // for all y constraint respected, stop
         //            cout<<"Stop light solver: Csp case, upper bound lower than 0"<<endl;
+        //cout << "constraint respected" << endl;
         return true;
     }
     return false;
@@ -273,6 +285,8 @@ bool LightOptimMinMax::handle_cell( Cell* x_cell,Cell*  y_cell,double loup,bool 
     else {
         handle_cstfree(xy_box,y_cell);
     }
+
+    // if (csp_actif) cout << "fa_lsolve hand cell 1 " << endl;
     /********************************************************************************/
     //mid point test (TO DO: replace with local optim to find a better point than midpoint)
     IntervalVector mid_y_box = get_feasible_point(x_cell,y_cell);
@@ -304,6 +318,8 @@ bool LightOptimMinMax::handle_cell( Cell* x_cell,Cell*  y_cell,double loup,bool 
             }
         }
     }
+
+    //if (csp_actif) cout << "fa_lsolve hand cell 2 " << endl;
 
     //************ part below add a contraction w.r.t f(x,y)<best_max, this part may not be efficient on every problem ******************************
 
@@ -337,6 +353,8 @@ bool LightOptimMinMax::handle_cell( Cell* x_cell,Cell*  y_cell,double loup,bool 
     // Update the lower and upper bound on y
     //data_y->pf &= xy_sys.goal->eval_baumann(xy_box); // objective function evaluation
     // Alex
+    //if (csp_actif) cout << "fa_lsolve hand cell 3 " << endl;
+
     if(eval_all(xy_sys.goal,xy_box).ub() > data_y->pf.ub() + 10e-13) {
        cout<<" ************************** CRITICAL ISSUE *******************"<<endl;
        cout<<" get worst upper bound, should not happen due to monotonicity of ifunc"<<endl;
@@ -366,6 +384,8 @@ bool LightOptimMinMax::handle_cell( Cell* x_cell,Cell*  y_cell,double loup,bool 
         //std::cout <<"           OUT 7 "<<std::endl;
         return false; // no need to go further, x_box does not contains the solution
     }
+
+    //if (csp_actif) cout << "fa_lsolve hand cell 4 " << endl;
 
     //*************************************************
     // store y_cell

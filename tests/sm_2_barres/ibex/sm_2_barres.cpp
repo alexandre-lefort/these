@@ -12,16 +12,28 @@ void sm_2_barres() {
 
     Variable x(9);
     IntervalVector x_ini(9);
+
+    double kpz10 = 1.0712    ;    
+    double kdz10 = 0.9998    ; 
+    double kpt10 = -10.3220  ;   
+    double kdt10 = -9.0197   ;
+    double kiz10 =   0.001   ;  
+    double kpz20 = -0.3585   ;  
+    double kdz20 = -0.0221   ;  
+    double kpt20 = -1.8123   ;  
+    double kdt20 = -0.8398   ;  
     
-    x_ini[0] = Interval(-10,10);
-    x_ini[1] = Interval(-10,10);
-    x_ini[2] = Interval(-10,10);
-    x_ini[3] = Interval(-10,10);
-    x_ini[4] = Interval(-10,10);
-    x_ini[5] = Interval(-10,10);
-    x_ini[6] = Interval(-10,10);
-    x_ini[7] = Interval(-10,10);
-    x_ini[8] = Interval(-10,10);
+    double eps_ctrl = 2;
+
+    x_ini[0] = Interval(kpz10 - eps_ctrl*fabs(kpz10), kpz10 + eps_ctrl*fabs(kpz10));
+    x_ini[1] = Interval(kdz10 - eps_ctrl*fabs(kdz10), kdz10 + eps_ctrl*fabs(kdz10));
+    x_ini[2] = Interval(kpt10 - eps_ctrl*fabs(kpt10), kpt10 + eps_ctrl*fabs(kpt10));
+    x_ini[3] = Interval(kdt10 - eps_ctrl*fabs(kdt10), kdt10 + eps_ctrl*fabs(kdt10));
+    x_ini[4] = Interval(kiz10 - eps_ctrl*fabs(kiz10), kiz10 + eps_ctrl*fabs(kiz10));
+    x_ini[5] = Interval(kpz20 - eps_ctrl*fabs(kpz20), kpz20 + eps_ctrl*fabs(kpz20));
+    x_ini[6] = Interval(kdz20 - eps_ctrl*fabs(kdz20), kdz20 + eps_ctrl*fabs(kdz20));
+    x_ini[7] = Interval(kpt20 - eps_ctrl*fabs(kpt20), kpt20 + eps_ctrl*fabs(kpt20));
+    x_ini[8] = Interval(kdt20 - eps_ctrl*fabs(kdt20), kdt20 + eps_ctrl*fabs(kdt20));
     
     double CzW0 = -2.7  ;
     double CmQ0 = -0.38 ;
@@ -42,7 +54,7 @@ void sm_2_barres() {
 
     int num_thread = 4;
 
-    double x_prec(1e-9),y_prec(1e-9),stop_prec(0.1);
+    double x_prec(1e-10),y_prec(1e-10),stop_prec(0.1);
 
 
     std::vector<Function*>         coeffs   = std::vector<Function*>();   
@@ -59,12 +71,12 @@ void sm_2_barres() {
     for (int i = 0 ; i <num_thread ; i++) {
 
         //Function crit_coeffs(  "../functions/Tstab_coefs.txt") ; cout << "stab criteria loaded" << endl;
-        Function crit_hinf_zz1("../functions/Tzz1.txt" )       ; cout << "hinf criteria loaded" << endl;
-        Function crit_hinf_zz2("../functions/Tzz2.txt" )       ; cout << "hinf criteria loaded" << endl;
-        Function crit_hinf_zb1("../functions/Tzb1.txt" )       ; cout << "hinf criteria loaded" << endl;
-        Function crit_hinf_zb2("../functions/Tzb2.txt" )       ; cout << "hinf criteria loaded" << endl;
+        Function crit_hinf_zz1("../functions/Tzz1.txt" ) ; cout << "hinf criteria loaded" << endl;
+        Function crit_hinf_zz2("../functions/Tzz2.txt" ) ; cout << "hinf criteria loaded" << endl;
+        Function crit_hinf_zb1("../functions/Tzb1.txt" ) ; cout << "hinf criteria loaded" << endl;
+        Function crit_hinf_zb2("../functions/Tzb2.txt" ) ; cout << "hinf criteria loaded" << endl;
     
-        coeffs.push_back(new Function("../functions/Tstab_coefs.txt"));
+        coeffs.push_back(new Function("../functions/Tstab_coefs.txt")); cout << "stab criteria loaded" << endl;
 
         const ExprNode& stab1 = (*coeffs[i])(x,p)[0];
         const ExprNode& stab2 = (*coeffs[i])(x,p)[1];
@@ -76,13 +88,14 @@ void sm_2_barres() {
      // toto check expression
         stabs.push_back(new Function(x,p,ibex::max(ibex::max(ibex::max(ibex::max(-stab6,-stab4),-stab2),ibex::pow(stab1,2)*ibex::pow(stab6,2) + ibex::pow(stab2,2)*ibex::pow(stab5,2) + stab1*ibex::pow(stab4,2)*stab5 + stab2*ibex::pow(stab3,2)*stab6 - 2*stab1*stab2*stab5*stab6 - stab1*stab3*stab4*stab6 - stab2*stab3*stab4*stab5),stab1*stab4 - stab2*stab3)));
 
+        cout << "stab function loaded" << endl;
         Function f_max1(x,y,crit_hinf_zz1(x,y));
         Function f_max2(x,y,crit_hinf_zz2(x,y));
         Function f_max3(x,y,crit_hinf_zb1(x,y));
         Function f_max4(x,y,crit_hinf_zb2(x,y));
             
         goals.push_back(new Function(x,y,ibex::max(f_max1(x,y),(ibex::max(f_max2(x,y),ibex::max(f_max3(x,y),f_max4(x,y)))))));
-    
+        cout << "goal function loaded" << endl;
         SystemFactory fac_x;
         fac_x.add_var(x,x_ini);
              
@@ -95,15 +108,16 @@ void sm_2_barres() {
         fac_fa_y_sys.add_var(x,x_ini);
         fac_fa_y_sys.add_var(p,p_ini);
         fac_fa_y_sys.add_goal(*stabs[i]);
-
-        std::cout << i << std::endl;
-        sys_x.push_back(     new NormalizedSystem(fac_x));
-        sys_xy.push_back(    new NormalizedSystem(fac_xy));
-        fa_y_sys.push_back(  new NormalizedSystem(fac_fa_y_sys));
+        cout << "structures loading" << endl;
+        sys_x.push_back(     new NormalizedSystem(fac_x));        cout << "c1" << endl;
+        sys_xy.push_back(    new NormalizedSystem(fac_xy));       cout << "c2" << endl;
+        fa_y_sys.push_back(  new NormalizedSystem(fac_fa_y_sys)); cout << "c3" << endl;
         
-        xy_ctc.push_back(    new CtcHC4(*sys_xy[i]));
-        x_ctc_id.push_back(  new CtcIdentity(x_ini.size()));
-        fa_y_ctc.push_back(  new CtcIdentity(x_ini.size()+p_ini.size()));
+        //cout << *sys_xy[i]->size() << endl;
+        xy_ctc.push_back(    new CtcHC4(*sys_xy[i]));                     cout << "c4" << endl;
+        x_ctc_id.push_back(  new CtcIdentity(x_ini.size()));              cout << "c5" << endl;
+        fa_y_ctc.push_back(  new CtcIdentity(x_ini.size()+p_ini.size())); cout << "c6" << endl;
+        cout << "structures loaded" << endl;
         
     }
 
@@ -111,31 +125,30 @@ void sm_2_barres() {
 
     OptimMinMax oo(sys_x, sys_xy, fa_y_sys, x_ctc_id, xy_ctc, fa_y_ctc, x_prec, y_prec,stop_prec,prec_fa_y, num_thread);
     
-
     oo.list_elem_absolute_max = 800;
     oo.list_rate = 0;
     oo.critpr = 0.4;
     oo.heap_prob = 0.1;
     oo.min_prec_coef = 10;
-    oo.iter = 10;
+    oo.iter = 100;
     oo.local_iter = 0;
     oo.visit_all = false;
     oo.nb_point = 1;
 
     oo.list_elem_absolute_max_csp = 800;
-    oo.iter_csp = 10;
+    oo.iter_csp = 100;
     oo.critpr_csp = 0.3;
     oo.list_rate_csp = 0;
     oo.min_prec_coef_csp = 10;
     oo.local_iter_csp = 0;
-    oo.visit_all_csp = false;
+    oo.visit_all_csp = true;
 
     oo.trace=1;
     oo.trace_freq = 1;
-    oo.timeout=3600;
+    oo.timeout=360;
 
 
-    Optim::Status res = oo.optimize(x_ini,4);
+    Optim::Status res = oo.optimize(x_ini);
 
     oo.report();
 
