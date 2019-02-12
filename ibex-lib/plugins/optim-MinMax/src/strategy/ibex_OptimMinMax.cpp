@@ -76,22 +76,12 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*>  x_sys_t        ,
     iter(default_iter),
     min_prec_coef(default_min_prec_coef),
     critpr(default_prob_heap),
-    local_iter(0),
     list_rate_csp(0),                       // unused                   
     list_elem_absolute_max_csp(0),          // unused                  
     iter_csp(0),                            // unused
     min_prec_coef_csp(0.0),                 // unused           
-    critpr_csp(0),                          // unused  
-    local_iter_csp(0),                      // unused      
+    critpr_csp(0),                          // unused       
     only_csp(false),
-    nb_sols(default_nb_sols),
-    min_acpt_diam(default_min_acpt_diam),
-    nb_sivia_iter(default_nb_sivia_iter),
-    nb_optim_iter(default_nb_optim_iter),
-    y_sol_radius(default_y_sol_radius),
-    reg_acpt_error(default_reg_acpt_error),
-    monitor(false),
-    monitor_csp(false),
     heap_prob(0),                           // unused
     visit_all(default_visit_all),
     visit_all_csp(default_visit_all_csp),   // unused
@@ -101,27 +91,20 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*>  x_sys_t        ,
     fa_y_cst(false),
     min_goal(x_sys_t[0]->goal != NULL),
     prec_fa_y(0),
-    loc_sols(std::vector<std::pair<std::vector<Vector>,std::vector<Matrix> > >()),
     x_ctc(x_ctc_t),                   
     x_sys(x_sys_t),      
-    lsolve(std::vector<LightOptimMinMax*>()),           
-    loc_solve(std::vector<LightLocalSolver*>()),  
+    lsolve(std::vector<LightOptimMinMax*>()),            
     bsc(std::vector<Bsc*>()),                     
-    minus_goal_y_at_x(std::vector<Function*>()),                
-    local_search(std::vector<UnconstrainedLocalSearch*>()),     
+    minus_goal_y_at_x(std::vector<Function*>()),                    
     fa_lsolve(std::vector<LightOptimMinMax*>()),                
-    minus_goal_csp_y_at_x(std::vector<Function*>()),            
-    local_search_csp(std::vector<UnconstrainedLocalSearch*>()), 
-    fa_loc_solve(std::vector<LightLocalSolver*>())             
+    minus_goal_csp_y_at_x(std::vector<Function*>()),                    
 {
     // TODO : test structures ExprNode in a unit test
     for (int i = 0 ; i < num_thread ; i ++) {
         lsolve.push_back(new LightOptimMinMax(*xy_sys_t[i], *xy_ctc_t[i], NULL));
-        loc_solve.push_back(new LightLocalSolver(*xy_sys_t[i], NULL, NULL, *x_ctc_t[i], x_sys_t[0]->box.size(), xy_sys_t[0]->box.size()-x_sys_t[0]->box.size(), false));
         bsc.push_back(new LargestFirst());  
         fa_lsolve.push_back(new LightOptimMinMax(*xy_sys_t[i], *xy_ctc_t[i], NULL, true)); // useless if no fa cst but need to construct it...
-        fa_loc_solve.push_back(new LightLocalSolver(*xy_sys_t[i], NULL, NULL, *x_ctc_t[i], x_sys_t[0]->box.size(), xy_sys_t[0]->box.size()-x_sys_t[0]->box.size(), true));
-   
+        
        if(!min_goal && xy_sys_t[0]->goal != NULL) {
    //        // goal function reformulation as min instead of max for local solver
            Array<const ExprNode> args((xy_sys_t[0]->goal)->nb_arg());
@@ -132,10 +115,6 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*>  x_sys_t        ,
                args.set_ref(j,a);
            }
            minus_goal_y_at_x.push_back(new Function(var,-(*(xy_sys_t[i]->goal))(args)));    
-           local_search.push_back(new UnconstrainedLocalSearch(*minus_goal_y_at_x[i],IntervalVector(1)));
-           lsolve[i]->local_solver = new UnconstrainedLocalSearch(*minus_goal_y_at_x[i],IntervalVector(1)); //local_search[i];
-           loc_solve[i]->local_solver_over_y = new UnconstrainedLocalSearch(*minus_goal_y_at_x[i],IntervalVector(1)); //local_search[i];
-           loc_solve[i]->local_solver_over_x = new UnconstrainedLocalSearch(*(xy_sys_t[i]->goal),IntervalVector(1));
            Affine2Eval* aff_eval = new Affine2Eval(*(xy_sys_t[i]->goal));
            lsolve[i]->affine_goal = aff_eval;
            lsolve[i]->goal_abs_prec = goal_rel_prec/100; // set goal prec of maximization problem lower than minimization
@@ -170,23 +149,13 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*> x_sys_t            ,
     list_elem_absolute_max(default_list_elem_absolute_max),
     iter(default_iter),
     min_prec_coef(default_min_prec_coef),
-    critpr(default_prob_heap),
-    local_iter(default_local_iter),  
+    critpr(default_prob_heap), 
     list_rate_csp(default_list_rate_csp),
     list_elem_absolute_max_csp(default_list_elem_absolute_max_csp),
     iter_csp(default_iter_csp),
     min_prec_coef_csp(default_min_prec_coef_csp),
     critpr_csp(default_prob_heap_csp),
-    local_iter_csp(default_local_iter_csp),
     only_csp(false),
-    nb_sols(default_nb_sols),
-    min_acpt_diam(default_min_acpt_diam),
-    nb_sivia_iter(default_nb_sivia_iter),
-    nb_optim_iter(default_nb_optim_iter),
-    y_sol_radius(default_y_sol_radius),
-    reg_acpt_error(default_reg_acpt_error),
-    monitor(false),
-    monitor_csp(false),
     heap_prob(0),
     visit_all(default_visit_all),
     visit_all_csp(default_visit_all_csp),
@@ -196,27 +165,20 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*> x_sys_t            ,
     fa_y_cst(true),
     min_goal(x_sys_t[0]->goal != NULL),
     prec_fa_y(fa_cst_prec),
-    loc_sols(std::vector<std::pair<std::vector<Vector>,std::vector<Matrix> > >(num_thread)),
     x_ctc(x_ctc_t),                   
     x_sys(x_sys_t),      
     lsolve(std::vector<LightOptimMinMax*>()),           
-    loc_solve(std::vector<LightLocalSolver*>()),  
     bsc(std::vector<Bsc*>()),                     
-    minus_goal_y_at_x(std::vector<Function*>()),                
-    local_search(std::vector<UnconstrainedLocalSearch*>()),     
+    minus_goal_y_at_x(std::vector<Function*>()),                  
     fa_lsolve(std::vector<LightOptimMinMax*>()),                
-    minus_goal_csp_y_at_x(std::vector<Function*>()),            
-    local_search_csp(std::vector<UnconstrainedLocalSearch*>()), 
-    fa_loc_solve(std::vector<LightLocalSolver*>())   
+    minus_goal_csp_y_at_x(std::vector<Function*>()),             
 {      
     for (int i = 0 ; i < num_thread ; i ++) {
         lsolve.push_back(new LightOptimMinMax(*xy_sys_t[i], *xy_ctc_t[i], NULL));
-        loc_solve.push_back(new LightLocalSolver(*xy_sys_t[i], NULL, NULL, *x_ctc_t[i], x_sys_t[0]->box.size(), xy_sys_t[0]->box.size()-x_sys_t[0]->box.size(), false));
         bsc.push_back(new LargestFirst()); 
-        cout << "start build fa_lsolve" << endl;
+
         fa_lsolve.push_back(new LightOptimMinMax(*max_fa_y_cst_sys_t[i], *y_fa_ctc_t[i], NULL, true));
-        fa_loc_solve.push_back(new LightLocalSolver(*xy_sys_t[i], NULL, NULL, *x_ctc_t[i], x_sys_t[0]->box.size(), xy_sys_t[0]->box.size()-x_sys_t[0]->box.size(), true));
-//
+        
         if(!min_goal && xy_sys_t[i]->goal !=NULL) {
             Array<const ExprNode> args((xy_sys_t[i]->goal)->nb_arg());
             Array<const ExprSymbol> var;
@@ -226,10 +188,6 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*> x_sys_t            ,
                 args.set_ref(j,a);
             }
             minus_goal_y_at_x.push_back(new Function(var,-(*(xy_sys_t[i]->goal))(args)));    
-            local_search.push_back(new UnconstrainedLocalSearch(*minus_goal_y_at_x[i], IntervalVector(1)));
-            lsolve[i]->local_solver = new UnconstrainedLocalSearch(*minus_goal_y_at_x[i], IntervalVector(1)); //local_search[i];
-            loc_solve[i]->local_solver_over_y = new UnconstrainedLocalSearch(*minus_goal_y_at_x[i], IntervalVector(1)); //local_search[i];
-            loc_solve[i]->local_solver_over_x = new UnconstrainedLocalSearch(*(xy_sys_t[i]->goal), IntervalVector(1));
             Affine2Eval* aff_eval = new Affine2Eval(*(xy_sys_t[i]->goal));
             lsolve[i]->affine_goal = aff_eval;
             lsolve[i]->goal_abs_prec = goal_rel_prec/100; // set goal prec of maximization problem lower than minimization
@@ -244,12 +202,7 @@ OptimMinMax::OptimMinMax(std::vector<NormalizedSystem*> x_sys_t            ,
             args_csp.set_ref(j,a);
         }
      
-        minus_goal_csp_y_at_x.push_back(new Function(var_csp,-(*(max_fa_y_cst_sys_t[i]->goal))(args_csp)));    
-        local_search_csp.push_back(new UnconstrainedLocalSearch(*minus_goal_csp_y_at_x[i], IntervalVector(1)));
-        fa_lsolve[i]->local_solver = new UnconstrainedLocalSearch(*minus_goal_csp_y_at_x[i], IntervalVector(1)); //local_search_csp[i];
-        fa_loc_solve[i]->local_solver_over_y = new UnconstrainedLocalSearch(*minus_goal_csp_y_at_x[i], IntervalVector(1)); //local_search_csp[i];
-        fa_loc_solve[i]->local_solver_over_x = new UnconstrainedLocalSearch(*(max_fa_y_cst_sys_t[i]->goal), IntervalVector(1));
-      
+        minus_goal_csp_y_at_x.push_back(new Function(var_csp,-(*(max_fa_y_cst_sys_t[i]->goal))(args_csp)));         
         Affine2Eval* aff_eval_csp = new Affine2Eval(*(max_fa_y_cst_sys_t[i]->goal));
         fa_lsolve[i]->affine_goal = aff_eval_csp;
         fa_lsolve[i]->goal_abs_prec = 1e-2;
@@ -277,15 +230,12 @@ OptimMinMax::~OptimMinMax() {
     omp_destroy_lock(&bufferlock); // omp
 
     for (int i = 0 ; i < num_thread ; i++) {
-        delete(local_search[i]);
-        delete(local_search_csp[i]);
         delete(lsolve[i]);
-        delete(loc_solve[i]);
         delete(bsc[i]);
         delete(minus_goal_y_at_x[i]);
         delete(fa_lsolve[i]); 
         delete(minus_goal_csp_y_at_x[i]); 
-        delete(fa_loc_solve[i]);
+
     }  
 }
 
@@ -322,17 +272,6 @@ void OptimMinMax::init_fa_lsolve() {
     }
 }
 
-
-void OptimMinMax::init_loc_solve() {
-    for (int i = 0 ; i < num_thread ; i ++) {
-        loc_solve[i]->min_acpt_diam = min_acpt_diam;
-        loc_solve[i]->nb_optim_iter = nb_optim_iter;
-        loc_solve[i]->nb_sols = nb_sols;
-        loc_solve[i]->y_sol_radius = y_sol_radius;
-        loc_solve[i]->reg_acpt_error = reg_acpt_error;
-        loc_solve[i]->nb_sivia_iter = nb_sivia_iter;
-    }
-}
 
 Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj_init_bound) {
     
@@ -464,14 +403,6 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
                 if (trace) cout <<  "iter="<< nb_cells <<",  size_heap="<< buffer->size()<< ",  ymax=" << ymax << ",  uplo= " <<  uplo<< endl;
                 update_uplo();
 
-
-                if(monitor) {
-                    lb.push_back(uplo);
-                    ub.push_back(loup);
-                    nbel.push_back(buffer->size());
-                    nbyel.push_back(nbel_count);
-                }
-
                 Timer::check(timeout);
 
             }
@@ -482,8 +413,6 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
                 update_uplo(); // the heap has changed -> recalculate the uplo
             }
         }
-        if(monitor)
-            export_monitor(&ub,&lb,&nbel,&nbyel);
     }
     catch (TimeOutException& ) {
         Timer::stop();
@@ -509,7 +438,6 @@ std::vector<Cell*> OptimMinMax::nsect_cell(int n, Cell *c) {
 
     int nstep = std::floor(log2(n));
 
-    //cout << "step" << nstep << endl;
     std::vector<Cell*> cells_1 = std::vector<Cell*>();
     std::vector<Cell*> cells_2 = std::vector<Cell*>();
 
@@ -525,102 +453,58 @@ std::vector<Cell*> OptimMinMax::nsect_cell(int n, Cell *c) {
         cells_2.clear();
     }
 
-    //for (int i = 0 ; i < cells_1.size() ; i++) {
-    //    std::cout << *cells_1[i] ;
-    //}
-    //std::cout << std::endl ;
-    //std::cout << "n = " << n << " ; nb_cell = " << cells_1.size() << std::endl;
     return cells_1;
 }
 
 
 bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
 
-    bool local_eval = (!loc_sols[ith].first.empty() || !loc_sols[ith].second.empty());
     DataMinMaxOpti * data_x = &(x_cell->get<DataMinMaxOpti>());
-    ofstream out;
-    if(monitor_csp) {
-        out.open("paver.txt",std::ios_base::app);
-        if(!out.is_open()) { cout<<"ERROR: cannot open paver.txt"<<endl; }
-    }
-
 
     //***************** contraction w.r.t constraint on x ****************
     IntervalVector tmpbox(x_cell->box);
-    //cout << "start check constraints" << endl;
-    //cout<<"test00"<<endl;
     int res_cst = check_constraints(x_cell, false, ith);
-    //cout<<"test0"<<endl;
 
     if (res_cst == 0) {
-        if(monitor_csp) {
-            for(int i=0; i<tmpbox.size();i++) { out<<tmpbox[i].lb()<<" "<<tmpbox[i].ub()<<" "; }
-            out << res_cst << endl;
-        }
-        out.close();
         return false;
     } else if (res_cst==2 && only_csp) {
-        if(monitor_csp) {
-            for(int i=0; i<x_cell->box.size();i++) { out<<x_cell->box[i].lb()<<" "<<x_cell->box[i].ub()<<" "; }
-            out << res_cst << endl;
-        }
         data_x->clear_fsbl_list(); // need to delete elements of fsbl_point_list since this branch is closed and they will not be needed later
         delete x_cell; // need to delete x_cell because not deleted in check cst.
-        out.close();
         return false;
     } else if (data_x->pu != 1) {
         x_ctc[ith]->contract(x_cell->box);
         if(x_cell->box.is_empty()) {
-            //vol_rejected += x_cell->box.volume();
-            //data_x->clear_fsbl_list(); // need to delete elements of fsbl_point_list since this branch is closed and they will not be needed later
             delete x_cell;
-            //cout<<"loup : "<<loup<<" get for point: x = "<<best_sol<<" y = "<<max_y<<" uplo: "<<uplo<< " volume rejected: "<<vol_rejected/init_vol*100<<endl;
             return false;
         }
     }
 
     if(!only_csp) {
         //************* point evaluation ****************
-        //cout<<"test1"<<endl;
         for (int i=0 ; i < nb_point ; i++) {
             Cell *x_copy = new Cell(*x_cell); // copy of the Cell and the y_heap
-            //cout<<"a0"<<endl;
-            //cout << *x_copy << " " << ith << endl;
             bool found_feas_pt = get_feasible_point(x_copy, ith);
-            //cout<<"a1"<<endl;
             if (found_feas_pt) { // we found a feasible point
                 lsolve[ith]->nb_iter = choose_nbiter(true, false, x_cell);
                 lsolve[ith]->prec_y = prec_y;
                 lsolve[ith]->list_elem_max = 0; // no limit on heap size
                 lsolve[ith]->visit_all = false; // no need to visit all leaves in midpoint
                 bool res1;
-                //cout<<"a2"<<endl;
-                if (!local_eval) {
-                    if (min_goal) {
-                        //cout<<"a3"<<endl;
-                        res1 = eval_goal(x_copy, loup, ith);
-                    } else {
-                        lsolve[ith]->nb_iter = choose_nbiter(true, false, x_cell);
-                        lsolve[ith]->prec_y = prec_y;
-                        lsolve[ith]->list_elem_max = 0; // no limit on heap size
-                        lsolve[ith]->visit_all = false; // no need to visit all leaves in midpoint
-                        //cout<<"a4"<<endl;
-                        res1 = lsolve[ith]->optimize(x_copy, loup); // eval maxf(midp,heap_copy), go to minimum prec on y to get a thin enclosure
-                        //cout<<"a5"<<endl;
-                        DataMinMaxOpti * data_x_copy = &(x_copy->get<DataMinMaxOpti>());
-                    }
+
+                if (min_goal) {
+
+                    res1 = eval_goal(x_copy, loup, ith);
                 } else {
-                    //cout<<"test2"<<endl;
-                    Interval eval = loc_solve[ith]->eval_backward_max_solutions(loc_sols[ith], x_copy->box, loup); 
-                    if (eval.is_empty()) {
-                        res1 = false;
-                     } else {
-                        res1 = true;
-                        DataMinMaxOpti * data_x_copy = &(x_copy->get<DataMinMaxOpti>());
-                        data_x_copy->fmax = eval;
-                    }
+                    lsolve[ith]->nb_iter = choose_nbiter(true, false, x_cell);
+                    lsolve[ith]->prec_y = prec_y;
+                    lsolve[ith]->list_elem_max = 0; // no limit on heap size
+                    lsolve[ith]->visit_all = false; // no need to visit all leaves in midpoint
+                    //cout<<"a4"<<endl;
+                    res1 = lsolve[ith]->optimize(x_copy, loup); // eval maxf(midp,heap_copy), go to minimum prec on y to get a thin enclosure
+                    //cout<<"a5"<<endl;
+                    DataMinMaxOpti * data_x_copy = &(x_copy->get<DataMinMaxOpti>());
                 }
-                //cout<<"test3"<<endl;
+
                 lsolve[ith]->visit_all = visit_all; // reset visit all to initial value
                 if (!res1) {
                     delete x_copy;
@@ -644,35 +528,22 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
                 }
             }
         }
- 
-        //cout<<"testa"<<endl;
+
         //************ evaluation of f(x,y_heap) *****************
         lsolve[ith]->prec_y = compute_min_prec(x_cell->box,false);
         lsolve[ith]->nb_iter = choose_nbiter(false, false, x_cell);
         lsolve[ith]->list_elem_max = compute_heap_max_size(data_x->y_heap->size(), false);
 
         bool res;
-        if(!local_eval) {
-            if(min_goal) { // not a minmax problem, only a min problem-> suffices
-                //cout<<"testb"<<endl;
-                res = eval_goal(x_cell, loup, ith);
-            } else {
-                res = lsolve[ith]->optimize(x_cell, loup);
-                double how_far = (data_x->fmax.lb()-uplo)/uplo;
-                how_far = 2;
-                if (res && (nb_optim_iter!=0||nb_sivia_iter!=0) && how_far>1) {
-                    res = loc_solve[ith]->compute_supy_lb(x_cell, uplo, loup, minus_goal_y_at_x[ith]);
-                }
-            }
+        
+        if(min_goal) { // not a minmax problem, only a min problem-> suffices
+            res = eval_goal(x_cell, loup, ith);
         } else {
-            Interval eval = loc_solve[ith]->eval_backward_max_solutions(loc_sols[ith], x_cell->box, loup); // TODO omp : tab of loc_sols
-            if(eval.is_empty()) {
-                res = false;
-            } else {
-                res = true;
-                data_x->fmax &= Interval(eval.lb(), POS_INFINITY);
-            }
+            res = lsolve[ith]->optimize(x_cell, loup);
+            double how_far = (data_x->fmax.lb()-uplo)/uplo;
+            how_far = 2;
         }
+
         if(!res) {
             delete x_cell;
             return false;
@@ -687,16 +558,6 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
         tmpbox = x_cell->box;
         ctr_ok = check_constraints(x_cell, true, ith);
 
-        if(only_csp && monitor_csp) {
-            for(int i=0; i<x_cell->box.size() ; i++) { out<<tmpbox[i].lb()<<" "<<tmpbox[i].ub()<<" "; }
-            out<<ctr_ok<<endl;
-            if(ctr_ok!=0) {
-                data_x->clear_fsbl_list(); // need to delete elements of fsbl_point_list since this branch is closed and they will not be needed later
-                delete x_cell;
-            }
-            out.close();
-            return false;
-        }
         if (ctr_ok !=0 && !only_csp) {
             lsolve[ith]->nb_iter = choose_nbiter(true, false, x_cell);   // need to be great enough so the minimum precision on y is reached
             lsolve[ith]->prec_y = prec_y;
@@ -721,7 +582,7 @@ bool  OptimMinMax::handle_cell(Cell * x_cell, int ith) {
         return false;
     }
 
-    // update optim data of the cell // TODO : omp : buffer mutex
+    // update optim data of the cell
     omp_set_lock(&bufferlock);
     buffer->cost1().set_optim_data(*x_cell, *x_sys[ith]);
     buffer->cost2().set_optim_data(*x_cell, *x_sys[ith]);
@@ -802,10 +663,7 @@ int OptimMinMax::compute_heap_max_size(int y_heap_size, bool csp) {
 
 bool OptimMinMax::get_feasible_point(Cell * elem, int ith) {
     elem->box = elem->box.mid(); // elem->box = elem->box.mid(); //get the box (x,mid(y))
-    //cout << "box = " << elem->box << endl;
-    //cout << "chekc_ ctr " << endl;
     int res = check_constraints(elem, true, ith);  // cout<<"done, res = "<<res<<endl;
-    //cout << "res = " << res << endl;
     if(res == 2) { return true; }
     return false;
 }
@@ -901,19 +759,6 @@ int OptimMinMax::check_constraints(Cell * x_cell, bool midp, int ith) {
         return 0;
     else
         return 1;
-}
-
-
-void export_monitor(std::vector<double> * ub, std::vector<double> * lb, std::vector<double> * nbxel, std::vector<double> * nbyel) {
-    std::ofstream out;
-    //    std::string output_name = "log.txt";
-    out.open("log.txt");
-    //    out<<"x box: "<<box<<std::endl;
-    for(size_t i = 0;i<ub->size();i++) {
-        out<<ub->at(i)<<" "<<lb->at(i)<<" "<<nbxel->at(i)<<" "<<nbyel->at(i)<<std::endl;
-    }
-    out.close();
-
 }
 
 
