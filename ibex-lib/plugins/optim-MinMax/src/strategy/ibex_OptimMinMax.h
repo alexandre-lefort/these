@@ -17,7 +17,6 @@
 #include "ibex_LightOptimMinMax.h"
 #include "ibex_Bsc.h"
 #include "ibex_Optim.h"
-#include "ibex_LightLocalSolver.h"
 #include "omp.h"
 
 namespace ibex {
@@ -130,13 +129,11 @@ public:
     std::vector<LightOptimMinMax*>  lsolve    ;
 
     std::vector<Bsc*>               bsc       ;
-
-    std::vector<Function*>                 minus_goal_y_at_x ; // goal function f becomes -f to solve a minimization problem over y at a fixed x
-
+    std::vector<Function*>          minus_goal_y_at_x ; // goal function f becomes -f to solve a minimization problem over y at a fixed x
 
     // Cst Factory
-    std::vector<LightOptimMinMax*>         fa_lsolve              ;
-    std::vector<Function*>                 minus_goal_csp_y_at_x  ; // goal csp function g becomes -g to solve a minimization problem over y at a fixed x
+    std::vector<LightOptimMinMax*>  fa_lsolve              ;
+    std::vector<Function*>          minus_goal_csp_y_at_x  ; // goal csp function g becomes -g to solve a minimization problem over y at a fixed x
 
     Status optimize(const IntervalVector& init_box, double obj_init_bound=POS_INFINITY);
     Status optimize();
@@ -165,7 +162,6 @@ public:
     static const int    default_iter;
     static const double default_min_prec_coef;
     static const int    default_prob_heap;
-    static const int    default_local_iter;
     static const bool   default_visit_all;
     static const int    default_nb_point;
     static const double default_perf_thresh;
@@ -176,7 +172,6 @@ public:
     static const int    default_iter_csp;
     static const double default_min_prec_coef_csp;
     static const int    default_prob_heap_csp;
-    static const int    default_local_iter_csp;
     static const bool   default_visit_all_csp;
 
 };

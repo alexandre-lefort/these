@@ -1,7 +1,7 @@
-function save_lienard_chipart(order, name, epsilon)
+function save_lienard_chipart(order, name, namefile, epsilon)
 
 	%% Create a new file;
-	file = fopen('ibex/lc.h','w');
+	file = fopen(namefile,'w');
 
 	%% Write head of file	
 	mes = '#include "tstab.h" \n \n using namespace std; \n using namespace ibex; \n \n';	

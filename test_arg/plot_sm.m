@@ -1,4 +1,3 @@
-
 function plot_sm(model_sm, p0vect, size_f)
 
     syms s;
