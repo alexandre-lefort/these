@@ -1,0 +1,10 @@
+prefix=/usr/local
+libdir=/home/alexandre/ws/these/ibex-lib/plugins/optim/Clp-1.15.6/Osi/src/OsiCommonTest
+
+Name: OsiUnitTests
+Description: COIN-OR Open Solver Interface Common Unit Tests
+URL: https://projects.coin-or.org/Osi
+Version: 0.106.5
+Libs: ${libdir}/libOsiCommonTests.la
+Cflags: -I/home/alexandre/ws/these/ibex-lib/plugins/optim/Clp-1.15.6/Osi/src/OsiCommonTest
+Requires: osi

@@ -23,7 +23,7 @@ void sm_2_barres() {
     double kpt20 = -1.8123   ;  
     double kdt20 = -0.8398   ;  
     
-    double eps_ctrl = 4;
+    double eps_ctrl = 0.8;
 
     x_ini[0] = Interval(kpz10 - eps_ctrl*fabs(kpz10), kpz10 + eps_ctrl*fabs(kpz10));
     x_ini[1] = Interval(kdz10 - eps_ctrl*fabs(kdz10), kdz10 + eps_ctrl*fabs(kdz10));
@@ -62,9 +62,9 @@ void sm_2_barres() {
     p_ini[0] = Interval(CzW0 - eps*fabs(CzW0), CzW0 + eps*fabs(CzW0));
     p_ini[1] = Interval(CmQ0 - eps*fabs(CmQ0), CmQ0 + eps*fabs(CmQ0));
 
-    int num_thread = 64;
+    int num_thread = 4;
 
-    double x_prec(1e-12), y_prec(1e-12), stop_prec(0.1);
+    double x_prec(1e-8), y_prec(1e-8), stop_prec(0.1);
 
     std::vector<Function*>         coeffs   = std::vector<Function*>();   
     std::vector<Function*>         goals    = std::vector<Function*>();   
@@ -83,17 +83,17 @@ void sm_2_barres() {
         Function crit_hinf_zb1("../functions/Tzb1.txt" ) ;
         Function crit_hinf_zb2("../functions/Tzb2.txt" ) ; 
     
-        coeffs.push_back(new Function("../functions/Tstab_coefs.txt"));
+        //coeffs.push_back(new Function("../functions/Tstab_coefs.txt"));
+//
+        //const ExprNode& stab1 = (*coeffs[i])(x,p)[0];
+        //const ExprNode& stab2 = (*coeffs[i])(x,p)[1];
+        //const ExprNode& stab3 = (*coeffs[i])(x,p)[2];
+        //const ExprNode& stab4 = (*coeffs[i])(x,p)[3];
+        //const ExprNode& stab5 = (*coeffs[i])(x,p)[4];
+        //const ExprNode& stab6 = (*coeffs[i])(x,p)[5];
 
-        const ExprNode& stab1 = (*coeffs[i])(x,p)[0];
-        const ExprNode& stab2 = (*coeffs[i])(x,p)[1];
-        const ExprNode& stab3 = (*coeffs[i])(x,p)[2];
-        const ExprNode& stab4 = (*coeffs[i])(x,p)[3];
-        const ExprNode& stab5 = (*coeffs[i])(x,p)[4];
-        const ExprNode& stab6 = (*coeffs[i])(x,p)[5];
-
-        stabs.push_back(new Function(x,p,ibex::max(ibex::max(ibex::max(ibex::max(-stab6,-stab4),-stab2),ibex::pow(stab1,2)*ibex::pow(stab6,2) + ibex::pow(stab2,2)*ibex::pow(stab5,2) + stab1*ibex::pow(stab4,2)*stab5 + stab2*ibex::pow(stab3,2)*stab6 - 2*stab1*stab2*stab5*stab6 - stab1*stab3*stab4*stab6 - stab2*stab3*stab4*stab5),stab1*stab4 - stab2*stab3)));
-
+        //stabs.push_back(new Function(x,p,ibex::max(ibex::max(ibex::max(ibex::max(-stab6,-stab4),-stab2),ibex::pow(stab1,2)*ibex::pow(stab6,2) + ibex::pow(stab2,2)*ibex::pow(stab5,2) + stab1*ibex::pow(stab4,2)*stab5 + stab2*ibex::pow(stab3,2)*stab6 - 2*stab1*stab2*stab5*stab6 - stab1*stab3*stab4*stab6 - stab2*stab3*stab4*stab5),stab1*stab4 - stab2*stab3)));
+        stabs.push_back(new Function(x,p,x[0] - 10000.0));
         Function f_max1(x,y,crit_hinf_zz1(x,y));
         Function f_max2(x,y,crit_hinf_zz2(x,y));
         Function f_max3(x,y,crit_hinf_zb1(x,y));
@@ -123,31 +123,31 @@ void sm_2_barres() {
         fa_y_ctc.push_back(  new CtcIdentity(x_ini.size()+p_ini.size()));       
     }
 
-    double prec_fa_y = 1e-12;
+    double prec_fa_y = 1e-5;
 
     OptimMinMax oo(sys_x, sys_xy, fa_y_sys, x_ctc_id, xy_ctc, fa_y_ctc, x_prec, y_prec,stop_prec,prec_fa_y, num_thread);
     
-    oo.list_elem_absolute_max = 0;
+    oo.list_elem_absolute_max = 2000;
     oo.list_rate = 0;
     oo.critpr = 0.4;
-    oo.heap_prob = 0.1;
-    oo.min_prec_coef = 100;
-    oo.iter = 100;
+    oo.heap_prob = 0.5;
+    oo.min_prec_coef = 10;
+    oo.iter = 10;
     oo.visit_all = false;
-    oo.nb_point = 10;
+    oo.nb_point = 1;
 
-    oo.list_elem_absolute_max_csp = 0;
-    oo.iter_csp = 100;
+    oo.list_elem_absolute_max_csp = 800;
+    oo.iter_csp = 10;
     oo.critpr_csp = 0.3;
     oo.list_rate_csp = 0;
-    oo.min_prec_coef_csp = 100;
-    oo.visit_all_csp = true;
+    oo.min_prec_coef_csp = 10;
+    oo.visit_all_csp = false;
 
     oo.trace=1;
     oo.trace_freq = 1;
-    oo.timeout=3600;
+    oo.timeout=3600*7;
 
-    Optim::Status res = oo.optimize(x_ini,7);
+    Optim::Status res = oo.optimize(x_ini);
 
     oo.report();
 

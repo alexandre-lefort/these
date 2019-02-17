@@ -1,0 +1,10 @@
+prefix=/usr/local
+libdir=/home/alexandre/ws/these/ibex-lib/plugins/optim/Clp-1.15.6/Osi/src/Osi
+
+Name: Osi
+Description: COIN-OR Open Solver Interface
+URL: https://projects.coin-or.org/Osi
+Version: 0.106.5
+Libs: ${libdir}/libOsi.la 
+Cflags: -I/home/alexandre/ws/these/ibex-lib/plugins/optim/Clp-1.15.6/Osi/src/Osi -I/home/alexandre/ws/these/ibex-lib/plugins/optim/Clp-1.15.6/Osi/src/Osi
+Requires: coinutils 

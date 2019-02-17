@@ -1,0 +1,8 @@
+datadir=/home/alexandre/ws/these/ibex-lib/plugins/optim/Clp-1.15.6/Data/Sample
+
+Name: Sample
+Description: Sample models
+URL: https://projects.coin-or.org/svn/Data/Sample
+Version: 1.2.9
+Libs:
+Cflags:

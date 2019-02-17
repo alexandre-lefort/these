@@ -1,0 +1,10 @@
+prefix=/usr/local
+libdir=/home/alexandre/ws/these/ibex-lib/plugins/optim/Clp-1.15.6/CoinUtils/src
+
+Name: CoinUtils
+Description: COIN-OR Utilities
+URL: https://projects.coin-or.org/CoinUtils
+Version: 2.9.11
+Libs: ${libdir}/libCoinUtils.la -lm 
+Cflags: -I/home/alexandre/ws/these/ibex-lib/plugins/optim/Clp-1.15.6/CoinUtils/src -I/home/alexandre/ws/these/ibex-lib/plugins/optim/Clp-1.15.6/CoinUtils/src
+Requires: 

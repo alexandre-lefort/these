@@ -302,13 +302,7 @@ Optim::Status OptimMinMax::optimize(const IntervalVector& x_box_ini1, double obj
     if (loup_changed) {
         ymax = compute_ymax();
         buffer->contract(ymax);
-
-        if (ymax <= NEG_INFINITY) {
-            if (trace) cout << " infinite value for the minimum " << endl;
-        }
-        if (trace) cout <<  "iter="<< nb_cells <<",  size_heap="<< buffer->size()<< ",  ymax=" << ymax << ",  uplo= " <<  uplo<< endl;
     }
-    if (trace) cout <<  "iter="<< nb_cells <<",  size_heap="<< buffer->size()<< ",  ymax=" << ymax << ",  uplo= " <<  uplo<< endl;
     update_uplo();
 
     Timer::reset_time();

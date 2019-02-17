@@ -1,0 +1,10 @@
+prefix=/usr/local
+libdir=/home/alexandre/ws/these/ibex-lib/plugins/optim/Clp-1.15.6/Clp/src
+
+Name: CLP
+Description: COIN-OR Linear Programming Solver
+URL: https://projects.coin-or.org/Clp
+Version: 1.15.6
+Libs: ${libdir}/libClp.la 
+Cflags: -I/home/alexandre/ws/these/ibex-lib/plugins/optim/Clp-1.15.6/Clp/src -I/home/alexandre/ws/these/ibex-lib/plugins/optim/Clp-1.15.6/Clp/src
+Requires: coinutils 
