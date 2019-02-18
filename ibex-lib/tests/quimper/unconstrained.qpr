@@ -1,5 +1,0 @@
-
-variables
- x,y;
- 
-  minimize x+y;

@@ -1,5 +1,0 @@
-variables
- x in [-10,10];
- y in [-10,10];
-minimize x+y;
-
