@@ -52,7 +52,7 @@ void sm_2_barres() {
     p_ini[0] = Interval(CzW0 - eps*fabs(CzW0), CzW0 + eps*fabs(CzW0));
     p_ini[1] = Interval(CmQ0 - eps*fabs(CmQ0), CmQ0 + eps*fabs(CmQ0));
 
-    int num_thread = 2;
+    int num_thread = 16;
 
     double x_prec(1e-10), y_prec(1e-10), stop_prec(0.1);
 

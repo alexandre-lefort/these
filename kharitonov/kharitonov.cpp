@@ -1,65 +1,64 @@
-#include "ibex.h"
-#include "Vector.h"
-#include "Eigen/Eigen"
+#include "kharitonov.h"
+
 
 using namespace ibex;
 
 
-Matrix build_hurwitz_matrix_old(Tab poly) {
+//Eigen::MatrixXd build_hurwitz_matrix_old(Eigen::VectorXd& poly) {
+//
+//    int degree = poly.size() - 1;
+//	
+//	Matrix M(d);
+//    M = sym(zeros(d));
+//	
+//    for (int j = 1 ; j <= degree ; j++) {
+//        int even_idx = 2*j;	
+//        for (int i = 1 ; i <= degree ; i++) {
+//            int idx = (even_idx - ii);	
+//            if (idx > d) {
+//                M[i-1][j-1] = 0;
+//            } else if (idx >= 0) {
+//                M[i-1][j-1] = poly(idx);
+//            }
+//        }
+//    }
+//}
+//
+//
+//int check_stability(Eigen::VectorXd& v) {
+//    
+//    Matrix M_hurwitz = build_hurwitz_matrix_old(v);
+//    criteria_coefs = {};
+//
+//    mode = mod(den_deg,2);
+//
+//    if (mode == 0)
+//        ii_c = (den_deg+1):-2:1;
+//        ii_m = (den_deg)  :-2:1;
+//    else
+//        ii_c = (den_deg+1):-2:1;
+//        ii_m = (den_deg-1):-2:1;
+//    end
+//
+//    s_c = length(ii_c);
+//    s_m = length(ii_m);
+//
+//    for ii = 1:s_c
+//        idx = ii_c(ii);
+//        %% criteria_coefs{end+1} = symtbx_horner(den_coeff(idx),'nodegree');
+//        criteria_coefs{end+1} = den_coeff(idx);
+//    end
+//	
+//    for ii = 1:s_m
+//        idx = ii_m(ii);
+//        minor = symtbx_minor_matrix(M_hurwitz,idx);
+//        %% criteria_coefs{end+1} = symtbx_horner(det(minor),'nodegree');
+//        criteria_coefs{end+1} = det(minor);
+//    end
+//}
 
-    int degree = poly.size() - 1;
-	
-	Matrix M(d);
-    M = sym(zeros(d));
-	
-    for (int j = 1 ; j <= degree ; j++) {
-        int even_idx = 2*j;	
-        for (int i = 1 ; i <= degree ; i++) {
-            int idx = (even_idx - ii);	
-            if (idx > d) {
-                M[i-1][j-1] = 0;
-            } else if (idx >= 0) {
-                M[i-1][j-1] = poly(idx);
-            }
-        }
-    }
-}
 
-
-int check_stab(std::Vector<double> v) {
-    
-    Matrix M_hurwitz = build_hurwitz_matrix_old(v);
-    criteria_coefs = {};
-
-    mode = mod(den_deg,2);
-
-    if (mode == 0)
-        ii_c = (den_deg+1):-2:1;
-        ii_m = (den_deg)  :-2:1;
-    else
-        ii_c = (den_deg+1):-2:1;
-        ii_m = (den_deg-1):-2:1;
-    end
-
-    s_c = length(ii_c);
-    s_m = length(ii_m);
-
-    for ii = 1:s_c
-        idx = ii_c(ii);
-        %% criteria_coefs{end+1} = symtbx_horner(den_coeff(idx),'nodegree');
-        criteria_coefs{end+1} = den_coeff(idx);
-    end
-	
-    for ii = 1:s_m
-        idx = ii_m(ii);
-        minor = symtbx_minor_matrix(M_hurwitz,idx);
-        %% criteria_coefs{end+1} = symtbx_horner(det(minor),'nodegree');
-        criteria_coefs{end+1} = det(minor);
-    end
-}
-
-
-int kharitonov(IntervalVector& box) {
+int kharitonov(Ibex::IntervalVector& box) {
 
 	int n = box.size();
 	std::Vector<double> v1(n), v2(n), v3(n) v4(n);
@@ -83,4 +82,8 @@ int kharitonov(IntervalVector& box) {
     int s4 = check_stab(v4);
 
     return (s1 + s2 + s3 + s4);
+}
+
+int main() {
+    return 1;
 }
