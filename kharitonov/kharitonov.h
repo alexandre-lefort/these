@@ -7,8 +7,8 @@
 
 
 Eigen::MatrixXd build_hurwitz_matrix_old(Eigen::VectorXd& poly);
-int check_stability(Eigen::VectorXd& v);
-int kharitonov(Ibex::IntervalVector& box);
+bool check_stability(Eigen::VectorXd& v);
+bool kharitonov(ibex::IntervalVector& box);
 
 
 #endif

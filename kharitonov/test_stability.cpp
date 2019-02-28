@@ -1,25 +1,38 @@
 #include "dabbene.h"
 #include "kharitonov.h"
 
+
 using namespace std;
 
 
-void test_dabene() {
+void test_stability() {
+    int iter_test = 1000;
     int max_iter = 1000;
-    ibex::IntervalVector poly(8);
-    poly[0] = ibex::Interval(1,2);
-    poly[1] = ibex::Interval(3,4);
-    poly[2] = ibex::Interval(5,6);
-    poly[3] = ibex::Interval(7,8);
-    poly[4] = ibex::Interval(9,10);
-    poly[5] = ibex::Interval(9,10);
-    poly[6] = ibex::Interval(9,10);
-    poly[7] = ibex::Interval(9,10);
-    bool res = dabbene(poly, max_iter);
-    cout << res << endl;
+    int degree   = 5;
+    ibex::IntervalVector poly(degree+1);
+    ibex::IntervalVector v(1);
+    v[0] = ibex::Interval(0,10);
+    
+    for (int t = 0 ; t < iter_test ; t++)
+    {
+    for (int i = 0 ; i < degree+1 ; i++)
+    {   
+        double l1 = v.random()[0];
+        double l2 = v.random()[0];
+        if (l1 < l2) poly[i] = ibex::Interval(l1,l1);
+        else         poly[i] = ibex::Interval(l1,l1);
+    }
+
+    bool res_dabbene = false;
+    bool res_kharitonov = kharitonov(poly);
+    if(res_kharitonov) {
+    res_dabbene = dabbene(poly, max_iter);
+    }
+    if (res_kharitonov) cout << poly << " " << res_kharitonov << " " << res_dabbene << endl;
+    }
 }
 
 int main() {
-    test_dabene();
+    test_stability();
     return 1;
 }

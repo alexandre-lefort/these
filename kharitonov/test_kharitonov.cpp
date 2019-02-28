@@ -10,7 +10,7 @@ void test_kharitonov() {
     poly[3] = ibex::Interval(7,8);
     poly[4] = ibex::Interval(9,10);
     bool res = kharitonov(poly);
-    cout << res << endl;
+    std::cout << res << std::endl;
 }
 
 
