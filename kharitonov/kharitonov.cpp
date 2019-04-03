@@ -26,6 +26,7 @@ Eigen::MatrixXd build_hurwitz_matrix_old(Eigen::VectorXd& poly) {
 bool check_stability(Eigen::VectorXd& v) {
     
     Eigen::MatrixXd M_hurwitz = build_hurwitz_matrix_old(v);
+    //std::cout << M_hurwitz << std::endl;
 	int n = v.size();
     bool stable = true;
     for (int i = 1 ; i < n ; i ++) {
@@ -47,10 +48,10 @@ bool kharitonov(ibex::IntervalVector& box) {
         double lb = box[i].lb();
         double ub = box[i].ub();
 
-        (i%4 == 0 || i%4 == 1) ? v1(i) = lb : v1(i) = ub;
-        (i%4 == 2 || i%4 == 3) ? v2(i) = lb : v2(i) = ub;
-        (i%4 == 0 || i%4 == 3) ? v3(i) = lb : v3(i) = ub;
-        (i%4 == 1 || i%4 == 2) ? v4(i) = lb : v4(i) = ub;
+        ((i%4 == 0) || (i%4 == 1)) ? v1(i) = lb : v1(i) = ub;
+        ((i%4 == 2) || (i%4 == 3)) ? v2(i) = lb : v2(i) = ub;
+        ((i%4 == 0) || (i%4 == 3)) ? v3(i) = lb : v3(i) = ub;
+        ((i%4 == 1) || (i%4 == 2)) ? v4(i) = lb : v4(i) = ub;
 	}
 
     // Check stability
@@ -60,4 +61,17 @@ bool kharitonov(ibex::IntervalVector& box) {
     bool s4 = check_stability(v4);
 
     return (s1 && s2 && s3 && s4);
+}
+
+bool check_stability_eigen(Eigen::VectorXd& v) {
+    
+    Eigen::MatrixXd M_hurwitz = build_hurwitz_matrix_old(v);
+    //std::cout << M_hurwitz << std::endl;
+    int n = v.size();
+    bool stable = true;
+    for (int i = 1 ; i < n ; i ++) {
+        Eigen::MatrixXd minor = M_hurwitz.block(0,0,i,i);
+        stable &= (minor.determinant() > 0);
+    }
+    return stable;
 }

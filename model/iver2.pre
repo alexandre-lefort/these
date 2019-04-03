@@ -1,0 +1,438 @@
+********************************************************************************************
+**                               FICHIER MODELE POUR PRECO                                **
+********************************************************************************************
+
+Ce fichier contient toutes les données d'entrées nécessaires à l'exécution du programme Preco.
+Vous pouvez modifier directement les données dans ce fichier.
+Chaque paragraphe doit être séparé des autres par un #.
+
+Toutes les grandeurs doivent être dimensionnelles.
+Les abscisses sont comptées à partir de l'avant du sous-marin.
+
+********************************************************************************************
+Nom du modèle : Sous-marin
+Ce modèle a été écrit le 15/02/2017
+********************************************************************************************
+
+**************
+*COMMENTAIRES*
+**************
+
+Il faut vérifier la position du CdG
+
+#
+********************************************************************************************
+PARAMETRES D'ENTREE PRINCIPAUX
+********************************************************************************************
+********************
+*FORME DE LA CARENE*
+********************
+! Longueur : Longueur du sous-marin (m)
+Longueur       = 1.682599945
+! Diamètre : Diamètre du sous-marin (m)
+Diamètre       = 0.15
+! Volume : Volume de forme du sous-marin (fuseau, pont-passerelle, massif, barres compris) (m3)
+Volume         =  0.0286
+! Xc : Abscisse du centre volume de forme, mesurée depuis l'avant du sous-marin (m)
+Xc             = 0.83
+! Rq : Rayon de coque à la troncature arrière (m)
+Rq             = 0.008
+! Longueur pont : Longueur du pont (m)
+Longueur pont  = 0
+! Vous pouvez choisir trois types de pont :
+!    - peu marqué sans angles vifs
+!    - moyen et arrondi
+!    - important
+Option Pont : peu marqué sans angles vifs
+
+! Vous pouvez choisir deux types de forme avant horizontale :
+!    - Arrondie
+!    - Droite
+Option Forme Avant Horizontale : Arrondie
+
+! Vous pouvez choisir deux types de forme avant verticale :
+!    - Arrondie
+!    - Droite
+Option Forme Avant Verticale : Arrondie
+
+#
+
+************
+*PROPULSEUR*
+************
+! Dh : Diamètre de l'hélice (m)
+Diamètre de l'hélice = 0.115
+#
+
+********
+*MASSIF*
+********
+! BMassif : Hauteur du massif à partir de l'axe Ox (m)
+BMassif = 0.1846
+! CMassif : Corde moyenne du massif (m)
+CMassif = 0.0750
+! Hp : Hauteur du pont sous le massif (m)
+Hp      = 0
+! Xme : Abscisse à 20% du bord d'entrée du massif (m)
+Xme     = 0.7118
+! Xmma : Abscisse à 50% du bord d'entrée du massif (m)
+Xmma    = 0.7343
+! Xms : Abscisse à 85% du bord d'entrée du massif (m)
+Xms     = 0.7605
+#
+
+*************************
+*BARRES DE PLONGEE AVANT*
+*************************
+! CBeta2 : Corde moyenne d'une barre avant (m)
+CBeta2 = 0
+! HBeta2 : Envergure comptée à partir de la coque (m)
+HBeta2 = 0
+! KBeta2 : Coefficient de portance des barres (-)
+KBeta2 = 0
+! XBeta2 : Abscisse de la mèche de la barre avant (m)
+XBeta2 = 0
+! RBeta2 : Rayon de la coque à l'emplanture de la barre avant (m)
+RBeta2 = 0
+! Vous pouvez choisir de placer les barres avant :
+!   - sur le massif
+!   - sur le fuseau
+Barre Avant : sur le massif
+
+! RapportSurfaceMT : Rapport de la surface Mobile de la barre sur la surface Totale (-)
+RapportSurfaceMT = 1.0
+#
+
+*********************
+*BARRES DE DIRECTION*
+*********************
+! BaV : Envergure moyenne (m)
+BaV    = 0.107
+! BfV : Envergure au bord de fuite (m)
+BfV    = 0.107
+! CmV : Longueur moyenne de la corde du safran (1/3 hauteur) (m)
+CmV    = 0.05789
+! CpmH : Corde du plan marginal (m)
+CpmH   = 0
+! CtV : Longueur de la corde moyenne aileron + safran (m)
+CtV    = 0.05789
+! EbcDIR : Écart entre la coque et le safran (m)
+EbcDIR = 0
+! HpmH : Hauteur du plan marginal (m)
+HpmH   = 0
+! JeuDIR : Jeu entre le safran et l'aileron (m)
+JeuDIR = 0
+! KAlpha : Coefficient de fente de la barre de direction (-)
+KAlpha = 0
+! RAlpha : Rayon de la coque à l'emplanture de la barre de direction (m)
+RAlpha = 0.045
+! ReV : Rayon de la coque à l'entrée des ailerons (1/3 hauteur) (m)
+ReV    = 0.0497
+! XAlpha : Abscisse de l'axe de la barre de direction (m)
+XAlpha = 1.8141
+! XeV : Abscisse du bord d'entrée des ailerons (m)
+XeV    = 1.7984
+! Vous pouvez choisir trois types de profil aileron - barre arrière :
+!    - barre et aileron profilés séparément (profil séparé)
+!    - barre intégrée au profil de l'aileron (barre intégrée)
+!    - barre isolée (barre isolée)
+Profil Barre Direction - Aileron : barre isolée
+
+Plan marginal restreint à l'aileron fixé : Faux
+! RapportSurfaceMT : Rapport de la surface Mobile de la barre sur la surface Totale  (-)
+RapportSurfaceMT = 1.0
+#
+
+****************************
+*BARRES DE PLONGEE ARRIERES*
+****************************
+! BaH : Envergure moyenne (m)
+BaH       = 0.107
+! BfH : Envergure au bord de fuite (m)
+BfH       = 0.107
+! CmH : Longueur moyenne de la corde du safran (1/3 hauteur) (m)
+CmH       = 0.05789
+! CpmV : Corde du plan marginal (m)
+CpmV      = 0
+! CtH : Longueur de la corde moyenne aileron + safran (m)
+CtH       = 0.05789
+! EbcAR : Écart entre la coque et le safran (m)
+EbcAR     = 0
+! HpmV : Hauteur du plan marginal (m)
+HpmV      = 0
+! JeuAR : Jeu entre le safran et l'aileron (m)
+JeuAR     = 0
+! KBeta1 : Coefficient de fente de la barre de direction (adim)
+KBeta1    = 0
+! RBeta1 : Rayon de la coque à l'emplanture de la barre de direction (m)
+RBeta1    = 0.045
+! ReH : Rayon de la coque à l'entrée des ailerons (1/3 hauteur) (m)
+ReH       = 0.0497
+! XBeta1 : Abscisse de l'axe de la barre de direction (m)
+XBeta1    = 1.8141
+! XeH : Abscisse du bord d'entrée des ailerons (m)
+XeH       = 1.7984
+! Vous pouvez choisir trois types de profil aileron - barre arrière :
+!   - barre et aileron profilés séparément (profil séparé)
+!   - barre intégrée au profil de l'aileron (barre intégrée)
+!   - barre isolée (barre isolée)
+Profil Barre arrière - Aileron : barre isolée
+
+Plan marginal restreint à l'aileron fixé : Faux
+! RapportSurfaceMT : Rapport de la surface Mobile de la barre sur la surface Totale  (-)
+RapportSurfaceMT = 1.0
+#
+
+*************************************************
+*CONVERSION DES BARRES ARRIERES VERS MODELE EN X*
+*************************************************
+Conversion vers un modèle barres en X : Faux
+! Angle des barres en X mesuré depuis l'horizontal. Varie entre 0 et 90 degré (deg)
+Angle des barres en degré = 0.0
+! Bras de levier d'une barre arrière : Distance entre l'axe du sous-marin et point
+! d'application de l'effort de portance sur la barre estimé à mi-hauteur de)
+! la partie mobile (m)
+Bras de levier d'une barre arrière = 0.0
+#
+
+************************
+*PAIRE DE PLANS FIXES 1*
+************************
+Utilisation du plan fixe vertical : Faux
+! Description d'un plan vertical
+! HmV : Longueur moyenne des plans (m)
+HmV = 0.0
+! LmV : Corde moyenne des plans (m)
+LmV = 0.0
+! XmV : Position moyenne des plans (m)
+XmV = 0.0
+! RmV : Rayon moyen de la coque au niveau des plans fixes (m)
+RmV = 0.0
+Plan fixe vertical situé au niveau des barres arrières : Faux
+!
+Utilisation du plan fixe horizontal : Faux
+! Description d'un plan horizontal
+! HmH : Longueur moyenne des plans (m)
+HmH = 0.0
+! LmH : Corde moyenne des plans (m)
+LmH = 0.0
+! XmH : Position moyenne des plans (m)
+XmH = 0.0
+! RmH : Rayon moyen de la coque au niveau des plans fixes (m)
+RmH = 0.0
+Plan fixe horizontal situé au niveau des barres arrières : Faux
+!
+!angleDegPourModeleX: Angle en degré utilisé pour la conversion des
+!plans fixes pour des plans fixes en X.
+angleDegPourModeleX = 0.0
+#
+
+****************************************************************
+*CONVERSION DU MODELE IMMERSION PROFONDE VERS MODELE DE SURFACE*
+****************************************************************
+!L'export du modèle de surface permet d'obtenir un modèle du sous-marin
+!pour des simulations de surface sans massif et sans barres avant
+!avec des grandeurs de barres modifiées
+!
+!Pensez à mettre à jour l'ensemble des grandeurs géométriques des barres
+!impactées par l'export de ce modèle (BaV, BfV, CpmH, HpmH...)
+!de façon à ne prendre en compte que l'envergure de la barre inférieure de direction
+!et celle de la partie immergée de la barre supérieure de direction.
+!
+!Les grandeurs du massif et des barres avant sont imposées à zéro en activant ce modèle
+!
+Convertir le modèle en modèle de surface : Faux
+#
+
+*********************************
+*PARAMETRES D'ENTREE SECONDAIRES*
+*********************************
+!Les valeurs de rugosité, viscosité, et vitesse sont utilisées
+!pour évaluer le coefficient de frottement, coefficient de traînée
+!de la carène nue et enfin le coefficient Cx0
+!Si on dispose déjà d'une valeur de Cxf0 ou Cx0, on peut
+!conserver ces paramètres à zéro
+!Vitesse d'avance du sous-marin (m/s)
+Vitesse = 3.0
+!Viscosité cinématique (m²/s)
+Viscosité = 1e-6
+!La valeur de rugosité sera ajoutée au coefficient de frottement
+Rugosité = 0.0004
+
+! Module de stabilité de forme (m)
+A = 1.38e-3
+! Constante du champ de gravitation local (m/s²)
+G = 9.81
+
+Imposer Cxf0 : Faux
+   -> Cxf0 = 0.0
+
+! Cppi : Coefficient de portance du propulseur en incidence (-)
+Imposer CPPI : Faux
+   -> CPPI = 0.0
+
+! Cppd : Coefficient de portance du propulseur en dérive (-)
+Imposer CPPD : Faux
+   -> CPPD = 0.0
+
+Extrapolation aux grands angles : Vrai
+#
+
+************************
+*PROJECTION DE LA COQUE*
+************************
+!La coque peut être décrite avec autant de points que nécessaires
+!Les positions sont données en mètres
+Projection de la coque (Nom, X, Ry, Rz) :
+Point1 , 0.0000000000 , 0.0000000000 , 0.0000000000
+Point2 , 0.0000012207 , 0.0001831485 , 0.0001831485
+Point3 , 0.0000024414 , 0.0003242142 , 0.0003242142
+Point4 , 0.0000042725 , 0.0004503751 , 0.0004503751
+Point5 , 0.0000407715 , 0.0014285094 , 0.0014285094
+Point6 , 0.0000804443 , 0.0018897704 , 0.0018897704
+Point7 , 0.0001644287 , 0.0028675458 , 0.0028675458
+Point8 , 0.0006678467 , 0.0057744160 , 0.0057744160
+Point9 , 0.0015050049 , 0.0086602020 , 0.0086602020
+Point10	, 0.002848511	, 0.011896598	, 0.011896598
+Point11	,	0.004653931	,	0.015175464	,	0.015175464
+Point12	,	0.006956055	,	0.018504824	,	0.018504824
+Point13	,	0.009795288	,	0.0218885	,	0.0218885
+Point14	,	0.013216187	,	0.025325911	,	0.025325911
+Point15	,	0.013319214	,	0.025415522	,	0.025415522
+Point16	,	0.016693726	,	0.02835	,	0.02835
+Point17	,	0.027043701	,	0.035650002	,	0.035650002
+Point18	,	0.02742273	,	0.035882916	,	0.035882916
+Point19	,	0.027432251	,	0.035888744	,	0.035888744
+Point20	,	0.0332771	,	0.039253235	,	0.039253235
+Point21	,	0.034209106	,	0.03975462	,	0.03975462
+Point22	,	0.03489917	,	0.040120239	,	0.040120239
+Point23	,	0.035781006	,	0.040580742	,	0.040580742
+Point24	,	0.036717407	,	0.041061829	,	0.041061829
+Point25	,	0.037400269	,	0.041407646	,	0.041407646
+Point26	,	0.037807617	,	0.041612007	,	0.041612007
+Point27	,	0.03908313	,	0.042242596	,	0.042242596
+Point28	,	0.040125366	,	0.042747826	,	0.042747826
+Point29	,	0.040641724	,	0.042994888	,	0.042994888
+Point30	,	0.041561279	,	0.043429699	,	0.043429699
+Point31	,	0.042546387	,	0.043888344	,	0.043888344
+Point32	,	0.043961914	,	0.044534901	,	0.044534901
+Point33	,	0.044993774	,	0.044997269	,	0.044997269
+Point34	,	0.045891968	,	0.045393745	,	0.045393745
+Point35	,	0.046996094	,	0.045873795	,	0.045873795
+Point36	,	0.047972534	,	0.046291721	,	0.046291721
+Point37	,	0.049014526	,	0.046731041	,	0.046731041
+Point38	,	0.050136719	,	0.047196819	,	0.047196819
+Point39	,	0.050265991	,	0.04724997	,	0.04724997
+Point40	,	0.057157105	,	0.049948601	,	0.049948601
+Point41	,	0.066701416	,	0.053298508	,	0.053298508
+Point42	,	0.077107544	,	0.056522221	,	0.056522221
+Point43	,	0.088363159	,	0.059586899	,	0.059586899
+Point44	,	0.100442261	,	0.062459213	,	0.062459213
+Point45	,	0.113305054	,	0.065106117	,	0.065106117
+Point46	,	0.126897827	,	0.067495651	,	0.067495651
+Point47	,	0.14115271	,	0.069597763	,	0.069597763
+Point48	,	0.155988892	,	0.071385094	,	0.071385094
+Point49	,	0.171313965	,	0.072833771	,	0.072833771
+Point50	,	0.187025024	,	0.073924065	,	0.073924065
+Point51	,	0.203011108	,	0.074640984	,	0.074640984
+Point52	,	0.214096191	,	0.074911881	,	0.074911881
+Point53	,	0.225	,	0.075	,	0.075
+Point54	,	0.4667948	,	0.075	,	0.075
+Point55	,	0.4667948	,	0.075	,	0.075
+Point56	,	0.471231567	,	0.075	,	0.075
+Point57	,	0.472212219	,	0.075	,	0.075
+Point58	,	0.473289063	,	0.075	,	0.075
+Point59	,	0.474544983	,	0.075	,	0.075
+Point60	,	0.475913086	,	0.075	,	0.075
+Point61	,	0.477509338	,	0.075	,	0.075
+Point62	,	0.479233765	,	0.075	,	0.075
+Point63	,	0.481253906	,	0.075	,	0.075
+Point64	,	0.483425964	,	0.075	,	0.075
+Point65	,	0.485980774	,	0.075	,	0.075
+Point66	,	0.488720581	,	0.075	,	0.075
+Point67	,	0.491959961	,	0.075	,	0.075
+Point68	,	0.495532898	,	0.075	,	0.075
+Point69	,	0.499700867	,	0.075	,	0.075
+Point70	,	0.503501465	,	0.075	,	0.075
+Point71	,	0.506599976	,	0.075	,	0.075
+Point72	,	0.506599976	,	0.075	,	0.075
+Point73	,	0.506599976	,	0.075	,	0.075
+Point74	,	0.506599976	,	0.075	,	0.075
+Point75	,	0.506765625	,	0.075	,	0.075
+Point76	,	0.510031128	,	0.075	,	0.075
+Point77	,	0.513296692	,	0.075	,	0.075
+Point78	,	0.516107788	,	0.075	,	0.075
+Point79	,	0.519261597	,	0.075	,	0.075
+Point80	,	0.521889221	,	0.075	,	0.075
+Point81	,	0.524866577	,	0.075	,	0.075
+Point82	,	0.527456238	,	0.075	,	0.075
+Point83	,	0.529852356	,	0.075	,	0.075
+Point84	,	0.531982117	,	0.075	,	0.075
+Point85	,	0.533963623	,	0.075	,	0.075
+Point86	,	0.535607239	,	0.075	,	0.075
+Point87	,	0.537128052	,	0.075	,	0.075
+Point88	,	0.538287964	,	0.075	,	0.075
+Point89	,	0.539188416	,	0.075	,	0.075
+Point90	,	0.539970886	,	0.075	,	0.075
+Point91	,	0.540539063	,	0.075	,	0.075
+Point92	,	0.541032593	,	0.075	,	0.075
+Point93	,	0.541264038	,	0.075	,	0.075
+Point94	,	0.541515015	,	0.075	,	0.075
+Point95	,	0.541606873	,	0.075	,	0.075
+Point96	,	0.541700806	,	0.075	,	0.075
+Point97	,	0.541747437	,	0.075	,	0.075
+Point98	,	0.5417948	,	0.075	,	0.075
+Point99	,	1.417499954	,	0.075	,	0.075
+Point100	,	1.417499954	,	0.075	,	0.075
+Point101	,	1.425434128	,	0.074776352	,	0.074776352
+Point102	,	1.435099503	,	0.074116531	,	0.074116531
+Point103	,	1.447698425	,	0.072881607	,	0.072881607
+Point104	,	1.462340271	,	0.07108403	,	0.07108403
+Point105	,	1.480224045	,	0.068485504	,	0.068485504
+Point106	,	1.498882111	,	0.065370483	,	0.065370483
+Point107	,	1.51749353	,	0.061873997	,	0.061873997
+Point108	,	1.51749353	,	0.061873997	,	0.061873997
+Point109	,	1.535438385	,	0.05812307	,	0.05812307
+Point110	,	1.535438385	,	0.05812307	,	0.05812307
+Point111	,	1.552298889	,	0.054225105	,	0.054225105
+Point112	,	1.567107147	,	0.050458592	,	0.050458592
+Point113	,	1.581549957	,	0.046445606	,	0.046445606
+Point114	,	1.586649963	,	0.044946388	,	0.044946388
+Point115	,	1.594896545	,	0.042429535	,	0.042429535
+Point116	,	1.603010376	,	0.039839508	,	0.039839508
+Point117	,	1.616952057	,	0.035118671	,	0.035118671
+Point118	,	1.630652527	,	0.030134522	,	0.030134522
+Point119	,	1.630652527	,	0.030134522	,	0.030134522
+Point120	,	1.644084412	,	0.024900738	,	0.024900738
+Point121	,	1.657217773	,	0.01943346	,	0.01943346
+Point122	,	1.670169006	,	0.013683283	,	0.013683283
+Point123	,	1.682599945	,	0.007806746	,	0.007806746
+Point124	,	1.682599945	,	0.007806746	,	0.007806746
+Point125	,	1.682599945	,	0.0070126	,	0.0070126
+Point126	,	1.682599945	,	0.00388012	,	0.00388012
+Point127	,	1.682599945	,	0.00271393	,	0.00271393
+Point128    , 1.682599945   ,  0.0000000000 , 0.0000000000
+Fin des données de projection
+#
+
+***************************************************
+*COEFFICIENTS DU MODELE DE MANOEUVRABILITE IMPOSES*
+***************************************************
+! Cette section optionnelle permet de forcer les termes du modèle de manoeuvrabilité
+! Ces coefficients sont affectés au modèle une fois tous les calculs effectués.
+! Par conséquent, les coefficients déclarés n'impactent pas les autres coefficients calculés.
+! Pour connaître la liste des coefficients qui peuvent être affectés,
+! appelez ce programme avec les options -c C
+
+           ***************************************************************
+**************************************************************************************
+*                        ######                 #####                                *
+*                        #     # #####  ###### #     #  ####                         *
+*                        #     # #    # #      #       #    #                        *
+*                        ######  #    # #####  #       #    #                        *
+*                        #       #####  #      #       #    #                        *
+*                        #       #   #  #      #     # #    #                        *
+*                        #       #    # ######  #####   ####                         *
+**************************************************************************************
+           ***************************************************************
+

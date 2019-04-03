@@ -44,15 +44,11 @@ symtbx_save_criterion(g2 , model_ctrl.gains , model_sm.p0 , 'g2.txt');
 
 %% Fix values for criterion
 
-ctrl.gains.kpz1 = 1.0712  ;
-ctrl.gains.kdz1 = 0.9998  ;
-ctrl.gains.kpt1 = -10.3220;
-ctrl.gains.kdt1 = -9.0197 ;
-ctrl.gains.kiz1 =   0.001 ;
-ctrl.gains.kpz2 = -0.3585 ;
-ctrl.gains.kdz2 = -0.0221 ;
-ctrl.gains.kpt2 = -1.8123 ;
-ctrl.gains.kdt2 = -0.8398 ;
+ctrl.gains.kz     = 1.0712  ;
+ctrl.gains.ktheta = 0.9998  ;
+ctrl.gains.kpi    = -10.3220;
+ctrl.gains.kq     = -9.0197 ;
+ctrl.gains.iz     =   0.001 ;
 
 
 g1 = symtbx_sym_subs_from_struct(g1, model_sm.p0); 
@@ -60,7 +56,7 @@ g1 = symtbx_sym_subs_from_struct(g1, ctrl.gains);
 
 g1 = simplify(g1);
 
-[res_1,res_2] = sym_integral(g1, 0:0.01:250, 'w');
+[res_1,res_2] = sym_integral(g1, 0:0.1:250, 'w');
 res_1 = res_1/(pi);
 res_2 = res_2/(pi);
 
@@ -72,7 +68,7 @@ g2 = symtbx_sym_subs_from_struct(g2, ctrl.gains);
 
 g2 = simplify(g2);
 
-[res_11,res_22] = sym_integral(g2, -pi/2:0.001:pi/2, 'w');
+[res_11,res_22] = sym_integral(g2, -pi/2:0.1:pi/2, 'w');
 
 res_11 = res_11/(pi);
 res_22 = res_22/(pi);
@@ -95,7 +91,7 @@ galtint2 = (idgalt*rgalt - rdgalt*igalt)/(rgalt*rgalt + igalt*igalt);
 galtint  = simplify(galtint1 + 1i*galtint2);
 disp(isequal(galtint,g1));
 
-[resgalt1, resgalt2] = sym_integral(galtint,0:0.01:100,'w');
+[resgalt1, resgalt2] = sym_integral(galtint,0:0.1:100,'w');
 
 R1 = simplify(real(g_alt)*real(g_alt) + imag(g_alt)*imag(g_alt));
 R1_b = eval(subs(R1,'w',b));
